@@ -1,8 +1,11 @@
 """Utility to do a full-screen pass using a WGSL shader."""
 
+import os
+
 import wgpu
 import numpy as np
 
+shader_dir = os.path.abspath(os.path.join(__file__, "..", "..", "wgsl"))
 
 SHADER_TEMPLATE = """
 
@@ -52,7 +55,7 @@ class WgslFullscreenRenderer:
     SHADER = "noaa.wgsl"  # filename of the shader to invoke
 
     def __init__(self):
-        self._shader = open(f"../wgsl/{self.SHADER}", "rb").read().decode()
+        self._shader = open(os.path.join(shader_dir, self.SHADER), "rb").read().decode()
 
         self._device = None
         self._pipeline = None

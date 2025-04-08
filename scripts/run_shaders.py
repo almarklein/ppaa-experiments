@@ -4,12 +4,16 @@ Run this after changing a shader.
 Then use the viewer to inspect the result.
 """
 
+import os
+
 from PIL import Image
 import numpy as np
 
-from scripts.renderer_glsl import GlslFullscreenRenderer
-from scripts.renderer_wgsl import WgslFullscreenRenderer
+from renderer_glsl import GlslFullscreenRenderer
+from renderer_wgsl import WgslFullscreenRenderer
 
+
+images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images"))
 
 # No aa
 
@@ -92,7 +96,7 @@ for Renderer in [
 
     for fname in ["circles.png", "synthetic.png", "egypt.png"]:
         name = fname.rpartition(".")[0]
-        output_fname = f"../images/{name}_{renderer.SHADER}.png"
+        output_fname = os.path.join(images_dir, f"{name}_{renderer.SHADER}.png")
 
         im1 = Image.open(f"images/{fname}").convert("RGBA")
         im1 = np.asarray(im1).copy()

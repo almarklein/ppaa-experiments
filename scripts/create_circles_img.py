@@ -4,8 +4,10 @@ I'm planning to use an AA filter in Pygfx, which is also used
 for scientific plotting, the filter must behave well for e.g. high-contrast line data.
 """
 
-from PIL import Image, ImageDraw
+import os
 import math
+
+from PIL import Image, ImageDraw
 
 # Image parameters
 width, height = 600, 400
@@ -56,5 +58,6 @@ draw_star(draw, center=(450, 160), radius=120, count=16, line_width=4, circle_wi
 
 
 # Save
-img.save("../images/pixelated_star_and_circle.png")
-print("Image saved as 'pixelated_star_and_circle.png'")
+filename = os.path.abspath(os.path.join(__file__, "..", "..", "images", "circles.png"))
+img.save(filename)
+print("Image saved as 'circles.png'")

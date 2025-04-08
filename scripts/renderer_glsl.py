@@ -1,9 +1,13 @@
 """Utility to do a full-screen pass using a GLSL shader."""
 
+import os
+
 import glfw
 import OpenGL.GL as gl
 import numpy as np
 
+
+shader_dir = os.path.abspath(os.path.join(__file__, "..", "..", "glsl"))
 
 VERTEX_SHADER = """
 #version 330 core
@@ -48,7 +52,7 @@ class GlslFullscreenRenderer:
 
     def create_shader_program(self):
         vertex_code = VERTEX_SHADER
-        aa_code = open(f"../glsl/{self.SHADER}", "rb").read().decode()
+        aa_code = open(os.path.join(shader_dir, self.SHADER), "rb").read().decode()
         fragment_code = FRAGMENT_SHADER.replace("AA_SHADER", aa_code)
 
         vertex_shader = self.compile_shader(vertex_code, gl.GL_VERTEX_SHADER)
