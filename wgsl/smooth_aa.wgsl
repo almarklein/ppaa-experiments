@@ -1,3 +1,6 @@
+// A shader that simply smoothes the pixels using a Gaussian kernel.
+// Can be nice to compare with.
+
 fn aa_shader(
     tex: texture_2d<f32>,
     smp: sampler,

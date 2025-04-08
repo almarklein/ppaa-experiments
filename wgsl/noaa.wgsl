@@ -1,3 +1,5 @@
+// A shader that just copies the pixels.
+
 fn aa_shader(
     tex: texture_2d<f32>,
     smp: sampler,

@@ -1,5 +1,5 @@
-// Antialiasing by simple Gaussian smoothing. Included for comparison.
-// Copyright (C) 2013 Almar Klein
+// A shader that simply smoothes the pixels using a Gaussian kernel.
+// Can be nice to compare with.
 
 
 vec4 aa_shader(sampler2D tex, vec2 fragcoord) {

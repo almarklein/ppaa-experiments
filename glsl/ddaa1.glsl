@@ -1,5 +1,5 @@
-// Directional diffusion antialiasing. POC version
-// Copyright (C) 2013 Almar Klein
+// Directional diffusion antialiasing, version 1 (2013 proof of concept)
+// Copyright (C) 2013 Almar Klein. Public domain.
 
 
 float rgb2lumi(vec4 color) {
