@@ -69,7 +69,11 @@ class Renderer_wgsl_dlaa(WgslFullscreenRenderer):
 # https://www.intel.com/content/www/us/en/developer/articles/technical/conservative-morphological-anti-aliasing-20.html
 
 
-# DDAA
+# Almar's experiments
+
+
+class Renderer_glsl_mcaa(GlslFullscreenRenderer):
+    SHADER = "mcaa.glsl"
 
 
 class Renderer_glsl_ddaa1(GlslFullscreenRenderer):
@@ -88,7 +92,8 @@ for Renderer in [
     Renderer_wgsl_fxaa311,
     # Other directional
     Renderer_wgsl_dlaa,
-    # DDAA
+    # Almar's
+    Renderer_glsl_mcaa,
     Renderer_glsl_ddaa1,
 ]:
     print(f"Rendering with {Renderer.__name__}")

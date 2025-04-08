@@ -21,7 +21,10 @@ vec4 contributions(float iso, vec4 v0, vec4 v1, vec4 v2, vec4 v3)
     return res;
 }
 
-vec4 aa_shader(sampler2D tex, vec2 texcoord, vec2 resolution) {
+vec4 aa_shader(sampler2D tex, vec2 fragcoord) {
+
+    vec2 resolution = vec2(textureSize(tex, 0).xy);
+    vec2 texcoord = fragcoord / resolution;
 
     // Parameters
     float ORIGINALITY = 0.25;
