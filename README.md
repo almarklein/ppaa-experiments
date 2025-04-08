@@ -19,3 +19,6 @@ estimate the orientation of the line, which makes no sense from a scale-space pe
 these algorithms are very much *not* rotationally invariant, which is probably why the early
 versions of FXAA still looked jaggy and were also too blurry. My idea: what if we use proper
 scale-space theory (i.e. Gaussian kernels)? I call this Directional Diffusion Anti Aliasing (DDAA).
+
+This repo contains a script `estimate_line_angles.py` that shows that a Gaussian derivative kernel
+has an error in its angle estinate that is more than 2 times smaller than other kernels.
