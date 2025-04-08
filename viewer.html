@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Comparison</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #ddd;
+            font-family: Arial, Helvetica, sans-serif
+        }
+
+        #controls {
+            padding: 10px;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #container {
+            flex: 1;
+            display: grid;
+            gap: 5px;
+            padding: 5px;
+        }
+
+        .panel {
+            overflow: hidden;
+            position: relative;
+            border: 2px solid #000;
+            border-radius: 10px;
+        }
+
+        .label {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            background: white;
+            color: black;
+            padding: 3px 6px;
+            font-size: 17px;
+            border-radius: 8px;
+            border: 2px solid black;
+        }
+
+        img {
+            width: 100%;
+            position: absolute;
+            transform-origin: top left;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        <label for="imageSelect">Choose an image:</label>
+        <select id="imageSelect"></select>
+        <button id="resetZoom">Reset Zoom</button>
+        <button id="refreshImages" style="display: none;">Refresh Images</button>
+    </div>
+    <div id="container"></div>
+
+    <script>
+        const imageNames = ['circles.png', 'synthetic.png', 'egypt.png'];
+        const algorithms = ['smooth_aa.wgsl', 'fxaa2.wgsl', 'fxaa311.wgsl', 'dlaa.wgsl', 'ddaa1.glsl'];
+        const container = document.getElementById('container');
+        const imgSelect = document.getElementById('imageSelect');
+        const resetButton = document.getElementById('resetZoom');
+        const refreshButton = document.getElementById('refreshImages');
+
+        if (window.location.protocol === 'file:') {
+            refreshButton.style.display = 'inline-block';
+        }
+
+        imageNames.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            imgSelect.appendChild(option);
+        });
+
+        let scale = 1, offsetX = 0, offsetY = 0;
+        let isPanning = false, startX, startY;
+
+        function createPanels(imageName) {
+            container.innerHTML = '';
+            const panelCount = algorithms.length + 1;
+            container.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(panelCount))}, 1fr)`;
+            container.style.gridTemplateRows = `repeat(${Math.ceil(Math.sqrt(panelCount))}, 1fr)`;
+
+            const imagePaths = [
+                { src: `images/${imageName}`, label: 'Original' },
+                ...algorithms.map(algo => ({ src: `images/${imageName.split('.')[0]}_${algo}.png`, label: algo }))
+            ];
+
+            imagePaths.forEach(({ src, label }) => {
+                const panel = document.createElement('div');
+                panel.className = 'panel';
+
+                const img = document.createElement('img');
+                img.src = src;
+                img.draggable = false;
+
+                const lbl = document.createElement('div');
+                lbl.className = 'label';
+                lbl.textContent = label;
+
+                panel.appendChild(img);
+                panel.appendChild(lbl);
+                container.appendChild(panel);
+            });
+            resetTransforms();
+        }
+
+        function resetTransforms() {
+            offsetX = 0;
+            offsetY = 0;
+            scale = 1;
+            updateTransforms();
+        }
+
+        function updateTransforms() {
+            document.querySelectorAll('.panel img').forEach(img => {
+                img.style.left = `${offsetX}px`;
+                img.style.top = `${offsetY}px`;
+                if (img.naturalWidth) {
+                    img.style.width = `${scale * img.naturalWidth}px`;
+                }
+            });
+        }
+
+        container.addEventListener('wheel', event => {
+            event.preventDefault();
+            let scaleFactor = Math.pow(2, -0.003 * event.deltaY);
+
+            // Get panel center
+            let img_el = document.querySelectorAll('.panel img')[0];
+            let panelRect = img_el.parentElement.getBoundingClientRect();
+            let panelCenterX = panelRect.width / 2;
+            let panelCenterY = panelRect.height / 2;
+
+            // Convert panel center to image coordinates
+            let imgOffsetX = panelCenterX - offsetX;
+            let imgOffsetY = panelCenterY - offsetY;
+            let centerImgX = imgOffsetX / scale;
+            let centerImgY = imgOffsetY / scale;
+
+            // Apply new scale and offsets
+            scale = scale * scaleFactor;
+            offsetX = panelCenterX - centerImgX * scale;
+            offsetY = panelCenterY - centerImgY * scale;
+
+            updateTransforms();
+        });
+
+        container.addEventListener('mousedown', event => {
+            if (event.button !== 0) return;
+            isPanning = true;
+            startX = event.clientX - offsetX;
+            startY = event.clientY - offsetY;
+        });
+
+        window.addEventListener('mousemove', event => {
+            if (!isPanning) return;
+            offsetX = (event.clientX - startX);
+            offsetY = (event.clientY - startY);
+            updateTransforms();
+        });
+
+        window.addEventListener('mouseup', () => isPanning = false);
+
+        resetButton.addEventListener('click', () => {
+            resetTransforms();
+        });
+
+        refreshButton.addEventListener('click', () => {
+            document.querySelectorAll('.panel img').forEach(img => {
+                img.src = img.src.split('?')[0] + '?' + new Date().getTime();
+            });
+        });
+
+        imgSelect.addEventListener('change', () => createPanels(imgSelect.value));
+        window.addEventListener('load', () => createPanels(imgSelect.value));
+    </script>
+</body>
+
+</html>
