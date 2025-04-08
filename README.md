@@ -33,3 +33,5 @@ At some point I will hook that viewer to GH pages ...
 This repo contains a script `estimate_line_angles.py` that shows that a Gaussian derivative kernel
 has an error in its angle estinate that is more than 2 times smaller than other kernels.
 
+<img width="633" alt="image" src="https://github.com/user-attachments/assets/0f4c808e-97ba-4153-a879-bcfe8bb6b7b4" />
+
