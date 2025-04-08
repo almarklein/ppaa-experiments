@@ -217,6 +217,9 @@ for name, angles, color in [
     i += 1
     mean_error = np.abs(angles).mean()
     plt.subplot(2, 2, i)
+    plt.title(name)
+    plt.xlabel("line angle (deg)")
+    plt.ylabel("error of estimated error")
     plt.plot(angles_ref, angles, color=color, ls="", ms=10, marker=".", alpha=alpha)
     plt.plot([0, 180], [mean_error, mean_error], color=color)
     plt.plot([0, 180], [-mean_error, -mean_error], color=color)

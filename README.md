@@ -25,6 +25,7 @@ scale-space theory (i.e. Gaussian kernels)? I call this Directional Diffusion An
 ## Viewer
 
 This repo contains an HTML file that can simply opened in your browser to easily compare differtent methods:
+
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/f96eacb9-aecf-45a4-a8ac-0f2d78be33a3" />
 
 At some point I will hook that viewer to GH pages ...
