@@ -52,6 +52,10 @@ class Renderer_wgsl_fxaa311(WgslFullscreenRenderer):
     SHADER = "fxaa311.wgsl"
 
 
+class Renderer_glsl_axaa(GlslFullscreenRenderer):
+    SHADER = "axaa.glsl"
+
+
 # Other directional
 
 
@@ -90,6 +94,7 @@ for Renderer in [
     Renderer_glsl_fxaa2,
     Renderer_wgsl_fxaa2,
     Renderer_wgsl_fxaa311,
+    Renderer_glsl_axaa,
     # Other directional
     Renderer_wgsl_dlaa,
     # Almar's

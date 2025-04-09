@@ -8,7 +8,7 @@
 //
 // Converted to wgsl in Bevy Engine: https://github.com/bevyengine/bevy/blob/main/crates/bevy_anti_aliasing/src/fxaa/fxaa.wgsl
 //
-// Adjusted for post-processing-aa-research framework by Almar Klein (2025): https://github.com/almarklein/post-processing-aa-research/blob/main/wgsl/fxaa311.wgsl
+// Adjusted for ppaa-research framework by Almar Klein (2025): https://github.com/almarklein/ppaa-research/blob/main/wgsl/fxaa311.wgsl
 
 //@group(0) @binding(0) var screenTexture: texture_2d<f32>;
 //@group(0) @binding(1) var samp: sampler;

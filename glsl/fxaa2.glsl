@@ -3,8 +3,8 @@ Basic FXAA implementation based on the code on geeks3d.com with the
 modification that the texture2DLod stuff was removed since it's
 unsupported by WebGL.
 
-Converted to wgsl, and adjusted for post-processing-aa-research framework by Almar Klein (2025).
-https://github.com/almarklein/post-processing-aa-research/blob/main/wgsl/fxaa2.wgsl
+Converted to wgsl, and adjusted for ppaa-research framework by Almar Klein (2025).
+https://github.com/almarklein/ppaa-research/blob/main/wgsl/fxaa2.wgsl
 
 --
 

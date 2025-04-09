@@ -6,8 +6,8 @@
 // Update   ver: ForserX (2018-2019)
 // https://github.com/ForserX/DLAA/blob/master/dlaa.hlsl
 //
-// Converted to wgsl, and adjusted for post-processing-aa-research framework by Almar Klein (2025).
-// https://github.com/almarklein/post-processing-aa-research/blob/main/wgsl/dlaa.wgsl
+// Converted to wgsl, and adjusted for ppaa-research framework by Almar Klein (2025).
+// https://github.com/almarklein/ppaa-research/blob/main/wgsl/dlaa.wgsl
 
 
 fn Luminance(rgb: vec3f) -> f32 {

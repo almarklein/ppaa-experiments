@@ -1,4 +1,4 @@
-# post-processing-aa-research
+# ppaa-research
 Compare post-processing aa methods like FXAA
 
 ## Intro
