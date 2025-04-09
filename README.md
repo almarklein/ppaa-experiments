@@ -1,6 +1,8 @@
 # ppaa-research
 Compare post-processing aa methods like FXAA
 
+[View!](https://almarklein.github.io/ppaa-research/viewer.html)
+
 ## Intro
 
 This project started in 2013, in the early days of the Vispy project:
@@ -24,11 +26,12 @@ scale-space theory (i.e. Gaussian kernels)? I call this Directional Diffusion An
 
 ## Viewer
 
-This repo contains an HTML file that can simply opened in your browser to easily compare differtent methods:
+This repo contains an HTML file to compare different ppaa methods. You can see it online at https://almarklein.github.io/ppaa-research/viewer.html
+
+When you've checked out the repo, you can simply open the local html-file in your browser. This is a great tool if you want to e.g. tweak existing methods, add another method, or develop your own method.
 
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/f96eacb9-aecf-45a4-a8ac-0f2d78be33a3" />
 
-At some point I will hook that viewer to GH pages ...
 
 ## Experiments
 This repo contains a script `estimate_line_angles.py` that shows that a Gaussian derivative kernel
