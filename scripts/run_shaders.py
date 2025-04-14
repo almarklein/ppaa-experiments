@@ -104,11 +104,12 @@ for Renderer in [
     print(f"Rendering with {Renderer.__name__}")
     renderer = Renderer()
 
-    for fname in ["circles.png", "synthetic.png", "egypt.png"]:
+    for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
         name = fname.rpartition(".")[0]
+        input_fname = os.path.join(images_dir, fname)
         output_fname = os.path.join(images_dir, f"{name}_{renderer.SHADER}.png")
 
-        im1 = Image.open(f"images/{fname}").convert("RGBA")
+        im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
         assert im1.dtype == np.uint8
         im1[:, :, 3] = 255  # set opaque, just in case

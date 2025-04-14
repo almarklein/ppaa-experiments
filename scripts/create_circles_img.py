@@ -1,63 +1,60 @@
 """
-Create an artificial image with line-like objects. Since
-I'm planning to use an AA filter in Pygfx, which is also used
-for scientific plotting, the filter must behave well for e.g. high-contrast line data.
+Create an artificial image with various circles, in different colors
+and on different backgrounds. This is to check the consistency under
+different contrasts.
 """
 
 import os
-import math
+import webbrowser  # noqa
 
 from PIL import Image, ImageDraw
 
+
 # Image parameters
-width, height = 600, 400
+width, height = 480, 480
 background_color = (255, 255, 255)
-line_color = (0, 0, 0)
 
 # Create a blank image
 img = Image.new("RGB", (width, height), background_color)
 draw = ImageDraw.Draw(img)
 
 
-def draw_star(draw, center, radius, count, line_width, circle_width):
+def draw_circle(center, line_color):
+    draw.circle(center, outline=line_color, radius=30, width=4)
+    draw.circle(center, outline=line_color, radius=20, width=1)
+    draw.circle(center, fill=line_color, radius=10)
+
+
+def draw_circles(center):
     cx, cy = center
-    angle_step = math.pi / count
-
-    for i in range(count):
-        angle = i * angle_step
-        dx = radius * math.cos(angle)
-        dy = radius * math.sin(angle)
-        x1 = cx - dx
-        y1 = cy - dy
-        x2 = cx + dx
-        y2 = cy + dy
-        draw.line((x1, y1, x2, y2), fill=line_color, width=line_width)
-
-    # Draw outer circle
-    radius += 10
-    bbox = [cx - radius, cy - radius, cx + radius, cy + radius]
-    draw.ellipse(bbox, outline=line_color, width=circle_width)
-
-    x, y = cx - radius, cy + radius + 20
-    for i in range(0, 20, 2):
-        w = i
-        if line_width == 1:
-            draw.rectangle([x, y, x + w, y + w], outline=line_color)
-            draw.circle((x + w / 2, y + 25 + w / 2), w / 2, outline=line_color)
-        else:
-            draw.rectangle([x, y, x + w, y + w], fill=line_color)
-            draw.circle((x + w / 2, y + 25 + w / 2), w / 2, fill=line_color)
-        x += 25
+    d = 75
+    draw_circle((cx - d, cy - d), (0, 0, 0))
+    draw_circle((cx, cy - d), (127, 127, 127))
+    draw_circle((cx + d, cy - d), (255, 255, 255))
+    draw_circle((cx - d, cy), (255, 0, 0))
+    draw_circle((cx, cy), (0, 255, 0))
+    draw_circle((cx + d, cy), (0, 0, 255))
+    draw_circle((cx - d, cy + d), (0, 255, 255))
+    draw_circle((cx, cy + d), (255, 0, 255))
+    draw_circle((cx + d, cy + d), (255, 255, 0))
 
 
-# Left: 1px lines and circle
-draw_star(draw, center=(150, 160), radius=120, count=32, line_width=1, circle_width=1)
+draw.rectangle((0, 0, 240, 240), fill=(255, 255, 255))
+draw_circles((120, 120))
 
-# Right: 4px lines and circle
-draw_star(draw, center=(450, 160), radius=120, count=16, line_width=4, circle_width=4)
+draw.rectangle((240, 0, 480, 240), fill=(0, 0, 0))
+draw_circles((120 + 240, 120))
+
+draw.rectangle((0, 240, 240, 480), fill=(170, 170, 170))
+draw_circles((120, 120 + 240))
+
+draw.rectangle((240, 240, 480, 480), fill=(85, 85, 85))
+draw_circles((120 + 240, 120 + 240))
 
 
 # Save
 filename = os.path.abspath(os.path.join(__file__, "..", "..", "images", "circles.png"))
 img.save(filename)
 print("Image saved as 'circles.png'")
+
+# webbrowser.open(f"file://{filename}")

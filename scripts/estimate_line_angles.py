@@ -115,15 +115,15 @@ def angle_from_fxaa_armin(im, x, y):
     return np.atan2(diry, dirx) * 180 / np.pi
 
 
-def get_gaussian_kernels(sigma):
+def get_gaussian_kernels(sigma, n):
     from pirt import gaussfun
 
-    k1 = gaussfun.gaussiankernel(sigma, 1, 3)
-    k2 = gaussfun.gaussiankernel(sigma, 0, 3)
+    k1 = gaussfun.gaussiankernel(sigma, 1, n)
+    k2 = gaussfun.gaussiankernel(sigma, 0, n)
     gdx = k1.reshape(1, -1) * k2.reshape(-1, 1)
 
-    k1 = gaussfun.gaussiankernel(sigma, 0, 3)
-    k2 = gaussfun.gaussiankernel(sigma, 1, 3)
+    k1 = gaussfun.gaussiankernel(sigma, 0, n)
+    k2 = gaussfun.gaussiankernel(sigma, 1, n)
     gdy = k1.reshape(1, -1) * k2.reshape(-1, 1)
 
     return gdx, gdy
@@ -146,15 +146,24 @@ def get_diffusion_kernels(sigma):
     return ldx, ldy
 
 
-gdx, gdy = get_gaussian_kernels(1)
+gdx9, gdy9 = get_gaussian_kernels(1, 3)
+gdx25, gdy25 = get_gaussian_kernels(1, 5)
 ldx, ldy = get_diffusion_kernels(1)
 
 
 ##
-def angle_from_gaussian(im, x, y):
+def angle_from_gaussian9(im, x, y):
     patch = im[y - 1 : y + 2, x - 1 : x + 2]  # 3x3
-    dirx = -(patch * gdx).sum()
-    diry = (patch * gdy).sum()
+    dirx = -(patch * gdx9).sum()
+    diry = (patch * gdy9).sum()
+
+    return np.atan2(dirx, diry) * 180 / np.pi
+
+
+def angle_from_gaussian25(im, x, y):
+    patch = im[y - 2 : y + 3, x - 2 : x + 3]  # 3x3
+    dirx = -(patch * gdx25).sum()
+    diry = (patch * gdy25).sum()
 
     return np.atan2(dirx, diry) * 180 / np.pi
 
@@ -183,7 +192,7 @@ for i in range(36):
             if 1 <= (patch > 0).sum() <= 8:
                 angle_sobel = angle_from_fxaa_armin(im, x, y)
                 angle_fxaa = angle_from_fxaa_armin(im, x, y)
-                angle_gauss = angle_from_gaussian(im, x, y)
+                angle_gauss = angle_from_gaussian25(im, x, y)
                 angle_lindeberg = angle_from_lindeberg(im, x, y)
 
                 angles_ref.append(angle_ref)
