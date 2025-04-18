@@ -70,7 +70,7 @@
 
     <script>
         const imageNames = ['lines.png', 'circles.png', 'synthetic.png', 'egypt.png'];
-        const algorithms = ['smooth_aa.wgsl', 'fxaa2.wgsl', 'fxaa311.wgsl', 'axaa.glsl', 'dlaa.wgsl', 'ddaa1.glsl'];
+        const algorithms = ['ssaax8.wgsl', 'ssaax2.wgsl', 'fxaa2.wgsl', 'fxaa311.wgsl', 'axaa.glsl', 'dlaa.wgsl', 'ddaa1.glsl'];
         const container = document.getElementById('container');
         const imgSelect = document.getElementById('imageSelect');
         const resetButton = document.getElementById('resetZoom');
@@ -133,6 +133,8 @@
                 img.style.top = `${offsetY}px`;
                 if (img.naturalWidth) {
                     img.style.width = `${scale * img.naturalWidth}px`;
+                } else {
+                    img.style.width = '';  // default
                 }
             });
         }
