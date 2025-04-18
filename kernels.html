@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Visualise filter kernels</title>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+</head>
+
+<body>
+    <h1> Illustration of 2D sampling kernels</h1>
+    <p>
+        Below are shown two versions of a Mitchell filter kernel. In the first, the kernel values are calculated for x
+        and y
+        and then multiplied.
+        In the second, the kernel values are calculated based on the distance from the center. Once can see how the left
+        is not rotationally summetric, and the negative lobes are not present in the diagonals.
+    </p>
+    <p>
+        You can view the source code of this page to see how the kernels are calculated.
+    </p>
+    <hr>
+
+    <div id="plot" style="width: 1200px; height: 600px;"></div>
+
+    <script>
+        function weightForFilterCubic1D(t, B, C) {
+            t = Math.abs(t);
+            let w = 0.0;
+            let t2 = t * t;
+            let t3 = t2 * t;
+
+            if (t < 1.0) {
+                w = (12.0 - 9.0 * B - 6.0 * C) * t3 +
+                    (-18.0 + 12.0 * B + 6.0 * C) * t2 +
+                    (6.0 - 2.0 * B);
+            } else if (t <= 2.0) {
+                w = (-B - 6.0 * C) * t3 +
+                    (6.0 * B + 30.0 * C) * t2 +
+                    (-12.0 * B - 48.0 * C) * t +
+                    (8.0 * B + 24.0 * C);
+            }
+
+            return w / 6.0;
+        }
+
+        function weightForFilterMitchell1D(t) {
+            return weightForFilterCubic1D(t, 1 / 3.0, 1 / 3.0);
+        }
+
+        const size = 20;
+        const im1 = [];
+        const im2 = [];
+
+        for (let y = 0; y < size; y++) {
+            let row1 = [];
+            let row2 = [];
+            for (let x = 0; x < size; x++) {
+                let fx = x - 0.5 * size;
+                let fy = y - 0.5 * size;
+                let dist = Math.sqrt(fx * fx + fy * fy);
+
+                let w1 = weightForFilterMitchell1D(fx / 3) * weightForFilterMitchell1D(fy / 3);
+                let w2 = weightForFilterMitchell1D(dist / 3);
+
+                row1.push(w1);
+                row2.push(w2);
+            }
+            im1.push(row1);
+            im2.push(row2);
+        }
+
+        const lighting = {
+            ambient: 0.,
+            diffuse: 2.0,
+            specular: 0.2,
+        };
+
+        const surface1 = {
+            z: im1,
+            type: 'surface',
+            colorscale: 'Viridis',
+            showscale: false,
+            scene: 'scene1',
+            lighting: lighting,
+            lightposition: { x: 100, y: 100, z: 100 },
+            title: "Automatic Labels Based on Data Frame Column Names",
+        };
+
+        const surface2 = {
+            z: im2,
+            type: 'surface',
+            colorscale: 'Viridis',
+            showscale: false,
+            scene: 'scene2',
+            lighting: lighting,
+            lightposition: { x: 100, y: 100, z: 100 }
+        };
+
+        const layout = {
+            grid: { rows: 1, columns: 2, pattern: 'independent' },
+            scene1: {
+                domain: { x: [0, 0.5], y: [0, 1] },
+                title: { text: "Mitchell multiplied" }
+            },
+            scene2: {
+                domain: { x: [0.5, 1], y: [0, 1] },
+                title: { text: "Mitchell circular" }
+            }
+        };
+
+        Plotly.newPlot('plot', [surface1, surface2], layout);
+    </script>
+</body>
+
+</html>
