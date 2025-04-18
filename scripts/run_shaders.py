@@ -37,6 +37,14 @@ class Renderer_wgsl_smooth_aa(WgslFullscreenRenderer):
     SHADER = "smooth_aa.wgsl"
 
 
+# SSAA
+
+
+class Renderer_wgsl_ssaa64(WgslFullscreenRenderer):
+    SHADER = "ssaa.wgsl"
+    SCALE_FACTOR = 8
+
+
 # FXAA
 
 
@@ -90,6 +98,8 @@ for Renderer in [
     # Stub
     Renderer_glsl_smooth_aa,
     Renderer_wgsl_smooth_aa,
+    # SSAA
+    Renderer_wgsl_ssaa64,
     # FXAA
     Renderer_glsl_fxaa2,
     Renderer_wgsl_fxaa2,
