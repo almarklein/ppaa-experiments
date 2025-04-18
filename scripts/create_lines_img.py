@@ -76,7 +76,7 @@ draw_star(draw, center=(450, 150), radius=120, count=16, line_width=4, circle_wi
 if SCALE_FACTOR == 1:
     fname = "lines.png"
 else:
-    fname = f"linesx{FSAA_FACTOR}.png"
+    fname = f"linesx{SCALE_FACTOR}.png"
 
 # Save
 filename = os.path.abspath(os.path.join(__file__, "..", "..", "images", fname))

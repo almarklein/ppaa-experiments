@@ -11,7 +11,6 @@ from PIL import Image, ImageDraw
 
 
 SCALE_FACTOR = 1
-FSAA_FACTOR = SCALE_FACTOR**2
 
 # Image parameters
 width, height = 480, 480
@@ -66,7 +65,7 @@ draw_circles((120 + 240, 120 + 240))
 if SCALE_FACTOR == 1:
     fname = "circles.png"
 else:
-    fname = f"circlesx{FSAA_FACTOR}.png"
+    fname = f"circlesx{SCALE_FACTOR}.png"
 
 # Save
 filename = os.path.abspath(os.path.join(__file__, "..", "..", "images", fname))
