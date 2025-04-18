@@ -15,15 +15,16 @@ fn Luminance(rgb: vec3f) -> f32 {
     return dot(rgb, vec3f(0.2126, 0.7152, 0.0722));
 }
 
-fn aa_shader(
+fn aaShader(
     tex: texture_2d<f32>,
     smp: sampler,
-    fragcoord: vec2<f32>,
+    texCoord: vec2<f32>,
+    scaleFactor: f32,  // assumed to be 1
 ) -> vec4<f32> {
 
     let resolution = vec2<f32>(textureDimensions(tex));
     let invRes = 1.0 / resolution;
-    let tc = fragcoord * invRes;
+    let tc = texCoord;
 
     let lambda: f32 = 3.0;
     let epsilon: f32 = 0.1;

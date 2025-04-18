@@ -1,14 +1,14 @@
 // A shader that simply smoothes the pixels using a Gaussian kernel.
 // Can be nice to compare with.
 
-fn aa_shader(
+fn aaShader(
     tex: texture_2d<f32>,
     smp: sampler,
-    fragcoord: vec2<f32>,
+    texCoord: vec2<f32>,
+    scaleFactor: f32,
 ) -> vec4<f32> {
 
-    let resolution = vec2<f32>(textureDimensions(tex, 0));
-    let texcoord = fragcoord / resolution;
+    let resolution = vec2<f32>(textureDimensions(tex));
 
     var color = vec3<f32>(0.0, 0.0, 0.0);
 
@@ -25,7 +25,7 @@ fn aa_shader(
             let k = kx * ky;
 
             let offset = vec2<f32>(f32(x) * dx, f32(y) * dy);
-            let sample = textureSample(tex, smp, texcoord + offset).rgb;
+            let sample = textureSample(tex, smp, texCoord + offset).rgb;
             color = color + sample * k;
         }
     }

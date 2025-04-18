@@ -49,15 +49,15 @@ fn rgb2luma(rgb: vec3<f32>) -> f32 {
 // @fragment
 // fn fragment(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
 
-fn aa_shader(
+fn aaShader(
     screenTexture: texture_2d<f32>,
     samp: sampler,
-    fragcoord: vec2<f32>,
+    texCoord: vec2<f32>,
+    scaleFactor: f32,  // assumed to be 1
 ) -> vec4<f32> {
 
     let resolution = vec2<f32>(textureDimensions(screenTexture));
     let inverseScreenSize = 1.0 / resolution.xy;
-    let texCoord = fragcoord * inverseScreenSize;
 
     let centerSample = textureSampleLevel(screenTexture, samp, texCoord, 0.0);
     let colorCenter = centerSample.rgb;

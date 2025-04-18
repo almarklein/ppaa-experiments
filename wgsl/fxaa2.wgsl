@@ -48,20 +48,21 @@ const FXAA_REDUCE_MIN: f32 = 1.0 / 128.0;
 const FXAA_REDUCE_MUL: f32 = 1.0 / 8.0;
 const FXAA_SPAN_MAX: f32 = 8.0;
 
-fn aa_shader(
+fn aaShader(
     tex: texture_2d<f32>,
     smp: sampler,
-    fragcoord: vec2<f32>,
+    texCoord: vec2<f32>,
+    scaleFactor: f32,  // assumed to be 1
 ) -> vec4<f32> {
 
     let resolution = vec2<f32>(textureDimensions(tex));
-    let texcoord = fragcoord / resolution;
+    let fragcoord = texCoord * resolution;
 
-    let v_rgbNW = texcoord + vec2<f32>(-1.0,  1.0);
-    let v_rgbNE = texcoord + vec2<f32>( 1.0,  1.0);
-    let v_rgbSW = texcoord + vec2<f32>(-1.0, -1.0);
-    let v_rgbSE = texcoord + vec2<f32>( 1.0, -1.0);
-    let v_rgbM  = texcoord;
+    let v_rgbNW = texCoord + vec2<f32>(-1.0,  1.0);
+    let v_rgbNE = texCoord + vec2<f32>( 1.0,  1.0);
+    let v_rgbSW = texCoord + vec2<f32>(-1.0, -1.0);
+    let v_rgbSE = texCoord + vec2<f32>( 1.0, -1.0);
+    let v_rgbM  = texCoord;
 
     let inverseVP = vec2<f32>(1.0 / resolution.x, 1.0 / resolution.y);
 

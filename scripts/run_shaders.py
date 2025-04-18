@@ -95,19 +95,25 @@ for Renderer in [
     Renderer_wgsl_fxaa2,
     Renderer_wgsl_fxaa311,
     Renderer_glsl_axaa,
-    # Other directional
+    # # Other directional
     Renderer_wgsl_dlaa,
-    # Almar's
+    # # Almar's
     Renderer_glsl_mcaa,
     Renderer_glsl_ddaa1,
 ]:
     print(f"Rendering with {Renderer.__name__}")
     renderer = Renderer()
+    hirez_flag = ""
+    if issubclass(Renderer, WgslFullscreenRenderer) and Renderer.SCALE_FACTOR > 1:
+        hirez_flag = "x" + str(Renderer.SCALE_FACTOR**2)
 
     for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
         name = fname.rpartition(".")[0]
-        input_fname = os.path.join(images_dir, fname)
+        input_fname = os.path.join(images_dir, fname.replace(".", hirez_flag + "."))
         output_fname = os.path.join(images_dir, f"{name}_{renderer.SHADER}.png")
+
+        if hirez_flag and not os.path.isfile(input_fname):
+            continue
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()

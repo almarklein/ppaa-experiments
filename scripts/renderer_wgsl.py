@@ -23,29 +23,30 @@ struct FragmentOutput {
 };
 
 @group(0) @binding(0)
-var screen_texture: texture_2d<f32>;
+var theScreenTexture: texture_2d<f32>;
 @group(0) @binding(1)
-var screen_sampler: sampler;
+var theScreenSampler: sampler;
 
 @vertex
-fn vs_main(in: VertexInput) -> Varyings {
+fn vsMmain(in: VertexInput) -> Varyings {
     var positions = array<vec2<f32>,4>(
         vec2<f32>(0.0, 1.0), vec2<f32>(0.0, 0.0), vec2<f32>(1.0, 1.0), vec2<f32>(1.0, 0.0)
     );
     let pos = positions[in.index];
     var varyings: Varyings;
     varyings.position = vec4<f32>(pos * 2.0 - 1.0, 0.0, 1.0);
+    varyings.texcoord = vec2<f32>(pos.x, 1.0 - pos.y);
     return varyings;
 }
 
 AA_SHADER
 
+const theScaleFactor : f32 = SCALE_FACTOR;
+
 @fragment
-fn fs_main(varyings: Varyings) -> FragmentOutput {
+fn fsMain(varyings: Varyings) -> FragmentOutput {
     var out : FragmentOutput;
-    // let tex_height = f32(textureDimensions(screen_texture).y);
-    // let fragcoord = vec2<f32>(varyings.position.x, tex_height - varyings.position.y);
-    out.color = aa_shader(screen_texture, screen_sampler, varyings.position.xy);
+    out.color = aaShader(theScreenTexture, theScreenSampler, varyings.texcoord, theScaleFactor);
     return out;
 }
 """
@@ -53,6 +54,7 @@ fn fs_main(varyings: Varyings) -> FragmentOutput {
 
 class WgslFullscreenRenderer:
     SHADER = "noaa.wgsl"  # filename of the shader to invoke
+    SCALE_FACTOR = 1
 
     def __init__(self):
         self._shader = open(os.path.join(shader_dir, self.SHADER), "rb").read().decode()
@@ -79,8 +81,8 @@ class WgslFullscreenRenderer:
             w, h, wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING
         )
         tex2 = self._create_texture(
-            tex1.size[0],
-            tex1.size[1],
+            w // self.SCALE_FACTOR,
+            h // self.SCALE_FACTOR,
             wgpu.TextureUsage.COPY_SRC | wgpu.TextureUsage.RENDER_ATTACHMENT,
         )
         sampler = device.create_sampler(
@@ -173,6 +175,7 @@ class WgslFullscreenRenderer:
 
         # Get render pipeline
         wgsl = SHADER_TEMPLATE.replace("AA_SHADER", self._shader)
+        wgsl = wgsl.replace("SCALE_FACTOR", str(float(self.SCALE_FACTOR)))
         shader_module = device.create_shader_module(code=wgsl)
 
         pipeline_layout = device.create_pipeline_layout(
@@ -183,7 +186,7 @@ class WgslFullscreenRenderer:
             layout=pipeline_layout,
             vertex={
                 "module": shader_module,
-                "entry_point": "vs_main",
+                "entry_point": None,
                 "buffers": [],
             },
             primitive={
@@ -194,7 +197,7 @@ class WgslFullscreenRenderer:
             multisample=None,
             fragment={
                 "module": shader_module,
-                "entry_point": "fs_main",
+                "entry_point": None,
                 "targets": targets,
             },
         )
