@@ -116,11 +116,13 @@ for Renderer in [
     hirez_flag = ""
     if issubclass(Renderer, WgslFullscreenRenderer) and Renderer.SCALE_FACTOR > 1:
         hirez_flag = "x" + str(Renderer.SCALE_FACTOR)
+    shadername = renderer.SHADER.replace(".", hirez_flag + ".", 1)
 
     for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
         name = fname.rpartition(".")[0]
+
         input_fname = os.path.join(images_dir, f"{name}{hirez_flag}.png")
-        output_fname = os.path.join(images_dir, f"{name}_{renderer.SHADER}.png")
+        output_fname = os.path.join(images_dir, f"{name}_{shadername}.png")
 
         if hirez_flag and not os.path.isfile(input_fname):
             continue
