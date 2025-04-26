@@ -40,19 +40,61 @@ class Renderer_wgsl_smooth_aa(WgslFullscreenRenderer):
 # SSAA
 
 
-class Renderer_wgsl_ssaax2(WgslFullscreenRenderer):
+class SSAAFullScreenRenderer(WgslFullscreenRenderer):
     SHADER = "ssaa.wgsl"
+    FILTER = "Mitchell"
+
+    def _format_wgsl(self, wgsl):
+        wgsl = super()._format_wgsl(wgsl)
+        assert "w = filterweightMitchell2D(" in wgsl
+        assert f"fn filterweight{self.FILTER}2D(" in wgsl
+        if self.FILTER != "Mitchell":
+            wgsl = wgsl.replace(
+                "w = filterweightMitchell2D(", f"w = filterweight{self.FILTER}2D("
+            )
+        return wgsl
+
+
+class Renderer_wgsl_ssaax2(SSAAFullScreenRenderer):
     SCALE_FACTOR = 2
 
 
-class Renderer_wgsl_ssaax4(WgslFullscreenRenderer):
-    SHADER = "ssaa.wgsl"
+class Renderer_wgsl_ssaax4(SSAAFullScreenRenderer):
     SCALE_FACTOR = 4
 
 
-class Renderer_wgsl_ssaax8(WgslFullscreenRenderer):
-    SHADER = "ssaa.wgsl"
+class Renderer_wgsl_ssaax8(SSAAFullScreenRenderer):
     SCALE_FACTOR = 8
+
+
+class Renderer_wgsl_up_box(SSAAFullScreenRenderer):
+    SCALE_FACTOR = 0.25
+    FILTER = "Box"
+
+
+class Renderer_wgsl_up_triangle(SSAAFullScreenRenderer):
+    SCALE_FACTOR = 0.25
+    FILTER = "Triangle"
+
+
+class Renderer_wgsl_up_gaussian(SSAAFullScreenRenderer):
+    SCALE_FACTOR = 0.25
+    FILTER = "Gaussian"
+
+
+class Renderer_wgsl_up_bspline(SSAAFullScreenRenderer):
+    SCALE_FACTOR = 0.25
+    FILTER = "BSpline"
+
+
+class Renderer_wgsl_up_mitchell(SSAAFullScreenRenderer):
+    SCALE_FACTOR = 0.25
+    FILTER = "Mitchell"
+
+
+class Renderer_wgsl_up_catmull(SSAAFullScreenRenderer):
+    SCALE_FACTOR = 0.25
+    FILTER = "CatmullRom"
 
 
 # FXAA
@@ -102,7 +144,7 @@ class Renderer_glsl_ddaa1(GlslFullscreenRenderer):
     SHADER = "ddaa1.glsl"
 
 
-# ----------------------------
+# ----------------------------  AA filtering
 
 for Renderer in [
     # Stub
@@ -138,6 +180,37 @@ for Renderer in [
 
         if hirez_flag and not os.path.isfile(input_fname):
             continue
+
+        im1 = Image.open(input_fname).convert("RGBA")
+        im1 = np.asarray(im1).copy()
+        assert im1.dtype == np.uint8
+        im1[:, :, 3] = 255  # set opaque, just in case
+
+        im2 = renderer.render(im1)
+        Image.fromarray(im2).convert("RGB").save(output_fname)
+        print(f"    Wrote {output_fname}")
+
+print("Done!")
+
+# ---------------------------- Upsampling
+
+for Renderer in [
+    Renderer_wgsl_up_box,
+    Renderer_wgsl_up_triangle,
+    Renderer_wgsl_up_gaussian,
+    Renderer_wgsl_up_bspline,
+    Renderer_wgsl_up_mitchell,
+    Renderer_wgsl_up_catmull,
+]:
+    print(f"Upsampling with {Renderer.__name__}")
+    renderer = Renderer()
+
+    for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+        name = fname.rpartition(".")[0]
+        shadername = f"up-{Renderer.FILTER}"
+
+        input_fname = os.path.join(images_dir, fname)
+        output_fname = os.path.join(images_dir, f"{name}_{shadername}.png")
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()

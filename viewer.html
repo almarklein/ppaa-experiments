@@ -70,7 +70,8 @@
 
     <script>
         const imageNames = ['lines.png', 'circles.png', 'synthetic.png', 'egypt.png'];
-        const algorithms = ['ssaax8.wgsl', 'ssaax2.wgsl', 'fxaa2.wgsl', 'fxaa311.wgsl', 'axaa.glsl', 'dlaa.wgsl', 'ddaa1.glsl'];
+        const algorithms = ['', 'ssaax8.wgsl', 'ssaax2.wgsl', 'fxaa2.wgsl', 'fxaa311.wgsl', 'axaa.glsl', 'dlaa.wgsl', 'ddaa1.glsl'];
+        //const algorithms = ['up-Box', 'up-Triangle', 'up-Gaussian', 'up-BSpline', 'up-Mitchell', 'up-CatmullRom'];
         const container = document.getElementById('container');
         const imgSelect = document.getElementById('imageSelect');
         const resetButton = document.getElementById('resetZoom');
@@ -92,16 +93,15 @@
 
         function createPanels(imageName) {
             container.innerHTML = '';
-            const panelCount = algorithms.length + 1;
+            const panelCount = algorithms.length;
             container.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(panelCount))}, 1fr)`;
             container.style.gridTemplateRows = `repeat(${Math.ceil(Math.sqrt(panelCount))}, 1fr)`;
 
-            const imagePaths = [
-                { src: `images/${imageName}`, label: 'Original' },
-                ...algorithms.map(algo => ({ src: `images/${imageName.split('.')[0]}_${algo}.png`, label: algo }))
-            ];
+            algorithms.forEach(algo => {
+                let suffix = algo ? '_' + algo : '';
+                let src = `images/${imageName.split('.')[0]}${suffix}.png`
+                let label = algo || 'Original';
 
-            imagePaths.forEach(({ src, label }) => {
                 const panel = document.createElement('div');
                 panel.className = 'panel';
 

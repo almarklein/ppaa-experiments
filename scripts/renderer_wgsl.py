@@ -63,6 +63,9 @@ class WgslFullscreenRenderer:
         self._pipeline = None
         self._bind_group = None
 
+    def _format_wgsl(self, wgsl):
+        return wgsl.replace("SCALE_FACTOR", str(float(self.SCALE_FACTOR)))
+
     def render(self, image):
         assert image.ndim == 3 and image.shape[2] == 4, "Image must be rgba"
         h, w = image.shape[:2]
@@ -81,8 +84,8 @@ class WgslFullscreenRenderer:
             w, h, wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING
         )
         tex2 = self._create_texture(
-            w // self.SCALE_FACTOR,
-            h // self.SCALE_FACTOR,
+            int(w / self.SCALE_FACTOR),
+            int(h / self.SCALE_FACTOR),
             wgpu.TextureUsage.COPY_SRC | wgpu.TextureUsage.RENDER_ATTACHMENT,
         )
         sampler = device.create_sampler(
@@ -175,7 +178,8 @@ class WgslFullscreenRenderer:
 
         # Get render pipeline
         wgsl = SHADER_TEMPLATE.replace("AA_SHADER", self._shader)
-        wgsl = wgsl.replace("SCALE_FACTOR", str(float(self.SCALE_FACTOR)))
+        wgsl = self._format_wgsl(wgsl)
+
         shader_module = device.create_shader_module(code=wgsl)
 
         pipeline_layout = device.create_pipeline_layout(
