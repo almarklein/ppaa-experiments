@@ -79,6 +79,7 @@ fn aaShader(
     let resolution = vec2<f32>(textureDimensions(tex).xy);
 
     // Get the coord expressed in pixels (for the source texture)
+    // TODO -0.5!!!
     let fpos: vec2f = texCoord * resolution;  // the pos for this fragment in the source texture
     let ipos: vec2i = vec2i(fpos);  // floored
     let tpos: vec2f = fpos - vec2f(ipos);  // the t offset for the current pos
