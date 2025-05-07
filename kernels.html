@@ -9,19 +9,6 @@
 
 <body>
     <h1> Illustration of 2D sampling kernels</h1>
-    <p>
-        Below are shown two versions of a Mitchell filter kernel. In the first, the kernel values are calculated for x
-        and y
-        and then multiplied.
-        In the second, the kernel values are calculated based on the distance from the center. Once can see how the left
-        is not rotationally summetric, and the negative lobes are not present in the diagonals.
-    </p>
-    <p>
-        You can view the source code of this page to see how the kernels are calculated.
-    </p>
-    <hr>
-
-    <div id="plot" style="width: 1200px; height: 600px;"></div>
 
     <script>
         function weightForFilterCubic1D(t, B, C) {
@@ -47,7 +34,23 @@
         function weightForFilterMitchell1D(t) {
             return weightForFilterCubic1D(t, 1 / 3.0, 1 / 3.0);
         }
+    </script>
 
+    <p>
+        Below are shown two versions of a Mitchell filter kernel. In the first, the kernel values are calculated for x
+        and y
+        and then multiplied.
+        In the second, the kernel values are calculated based on the distance from the center. Once can see how the left
+        is not rotationally summetric, and the negative lobes are not present in the diagonals.
+    </p>
+    <p>
+        You can view the source code of this page to see how the kernels are calculated.
+    </p>
+    <hr>
+
+    <div id="plot1" style="width: 1200px; height: 600px;"></div>
+
+    <script>
         const size = 20;
         const im1 = [];
         const im2 = [];
@@ -97,7 +100,7 @@
             lightposition: { x: 100, y: 100, z: 100 }
         };
 
-        const layout = {
+        const layout1 = {
             grid: { rows: 1, columns: 2, pattern: 'independent' },
             scene1: {
                 domain: { x: [0, 0.5], y: [0, 1] },
@@ -109,8 +112,82 @@
             }
         };
 
-        Plotly.newPlot('plot', [surface1, surface2], layout);
+        Plotly.newPlot('plot1', [surface1, surface2], layout1);
     </script>
+
+    Now a rotated kernel:
+
+    <hr>
+
+    <div id="plot2" style="width: 1200px; height: 600px;"></div>
+
+    <script>
+        const im3 = [];
+        const im4 = [];
+
+
+        function normalize(x, y) { let len = Math.sqrt(x * x + y * y); return [x / len, y / len]; }
+
+        let direction = [0.7, 0.2];
+        let diffuse_strength = 4.0;
+        direction = normalize(...direction);
+
+        for (let y = 0; y < size; y++) {
+            let row3 = [];
+            let row4 = [];
+            for (let x = 0; x < size; x++) {
+                let fx = x - 0.5 * size;
+                let fy = y - 0.5 * size;
+
+                let dpos = normalize(fx, fy);
+                let scale = Math.pow(Math.abs(direction[0] * direction[0] + direction[1] * direction[1]), 4.0) * diffuse_strength;
+
+                let dist = Math.sqrt(fx * fx + fy * fy);
+                let w3 = weightForFilterMitchell1D(dist / scale);
+                let w4 = w3;
+                row3.push(w3);
+                row4.push(w4);
+            }
+            im3.push(row3);
+            im4.push(row4);
+        }
+
+        const surface3 = {
+            z: im3,
+            type: 'surface',
+            colorscale: 'Viridis',
+            showscale: false,
+            scene: 'scene1',
+            lighting: lighting,
+            lightposition: { x: 100, y: 100, z: 100 },
+            title: "Automatic Labels Based on Data Frame Column Names",
+        };
+
+        const surface4 = {
+            z: im4,
+            type: 'surface',
+            colorscale: 'Viridis',
+            showscale: false,
+            scene: 'scene2',
+            lighting: lighting,
+            lightposition: { x: 100, y: 100, z: 100 }
+        };
+
+        const layout2 = {
+            grid: { rows: 1, columns: 2, pattern: 'independent' },
+            scene1: {
+                domain: { x: [0, 0.5], y: [0, 1] },
+                title: { text: "Mitchell rotated" }
+            },
+            scene2: {
+                domain: { x: [0.5, 1], y: [0, 1] },
+                title: { text: "Mitchell rotated" }
+            }
+        };
+
+        Plotly.newPlot('plot2', [surface3, surface4], layout2);
+    </script>
+
 </body>
 
 </html>

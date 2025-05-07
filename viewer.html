@@ -70,7 +70,7 @@
 
     <script>
         const imageNames = ['lines.png', 'circles.png', 'synthetic.png', 'egypt.png'];
-        const algorithms = ['', 'ssaax8.wgsl', 'ssaax2.wgsl', 'fxaa2.wgsl', 'fxaa311.wgsl', 'axaa.glsl', 'dlaa.wgsl', 'ddaa1.glsl'];
+        const algorithms = ['', 'ssaax8.wgsl', 'ssaax2.wgsl', 'fxaa2.wgsl', 'fxaa311.wgsl', 'axaa.glsl', 'dlaa.wgsl', 'ddaa1.glsl', 'ddaa2.wgsl'];
         //const algorithms = ['up-Box', 'up-Triangle', 'up-Gaussian', 'up-BSpline', 'up-Mitchell', 'up-CatmullRom'];
         const container = document.getElementById('container');
         const imgSelect = document.getElementById('imageSelect');
@@ -118,6 +118,7 @@
                 container.appendChild(panel);
             });
             resetTransforms();
+            refreshImages();
         }
 
         function resetTransforms() {
@@ -136,6 +137,12 @@
                 } else {
                     img.style.width = '';  // default
                 }
+            });
+        }
+
+        function refreshImages() {
+            document.querySelectorAll('.panel img').forEach(img => {
+                img.src = img.src.split('?')[0] + '?' + new Date().getTime();
             });
         }
 
@@ -184,9 +191,7 @@
         });
 
         refreshButton.addEventListener('click', () => {
-            document.querySelectorAll('.panel img').forEach(img => {
-                img.src = img.src.split('?')[0] + '?' + new Date().getTime();
-            });
+            refreshImages();
         });
 
         imgSelect.addEventListener('change', () => createPanels(imgSelect.value));
