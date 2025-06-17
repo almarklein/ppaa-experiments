@@ -192,7 +192,7 @@ for i in range(36):
             if 1 <= (patch > 0).sum() <= 8:
                 angle_sobel = angle_from_fxaa_armin(im, x, y)
                 angle_fxaa = angle_from_fxaa_armin(im, x, y)
-                angle_gauss = angle_from_gaussian25(im, x, y)
+                angle_gauss = angle_from_gaussian9(im, x, y)
                 angle_lindeberg = angle_from_lindeberg(im, x, y)
 
                 angles_ref.append(angle_ref)

@@ -213,6 +213,16 @@
             return vec2f(basegauss, k * norm_hermite);
         }
 
+        function filterweightGauss_o2(t, sigma_) {
+            let sigma = max(sigma_, 1e-9);
+            let sigma2 = sigma * sigma;
+            let basegauss = exp(- 0.5 * (t * t) / sigma2);
+            let x = t / (sigma * sqrt2);
+            let k = (-2 + 4 * x * x) * basegauss;
+            let norm_hermite = 1 / pow(sigma * sqrt2, 2);
+            return vec2f(basegauss, k * norm_hermite);
+        }
+
         function filterweightGaussDx(t, sigma) {
             let kx = filterweightGauss_o1(t.x, sigma);
             let ky = filterweightGauss_o0(t.y, sigma);
@@ -224,6 +234,41 @@
             let ky = filterweightGauss_o1(t.y, sigma);
             return vec2f(kx.x * ky.x, kx.y * ky.y); // wgsl: kx * ky;
         }
+
+        function filterweightGaussDxx(t, sigma) {
+            let kx = filterweightGauss_o2(t.x, sigma);
+            let ky = filterweightGauss_o0(t.y, sigma);
+            return vec2f(kx.x * ky.x, kx.y * ky.y); // wgsl: kx * ky;
+        }
+
+        function filterweightGaussDyy(t, sigma) {
+            let kx = filterweightGauss_o0(t.x, sigma);
+            let ky = filterweightGauss_o2(t.y, sigma);
+            return vec2f(kx.x * ky.x, kx.y * ky.y); // wgsl: kx * ky;
+        }
+        function filterweightGaussLaplacian(t, sigma) {
+            let kx = filterweightGaussDxx(t, sigma);
+            let ky = filterweightGaussDyy(t, sigma);
+            // let kx = filterweightGauss_o2(t.x, sigma);
+            // let ky = filterweightGauss_o2(t.y, sigma);
+            return vec2f(0.5 * (kx.x + ky.x), 0.5 * (kx.y + ky.y)); // wgsl: 0.5 * (kx + ky);
+        }
+        function filterWeightRotated(t, diffuse_vec, sigma, ref_sigma) {
+
+            let mag = length(diffuse_vec);
+            if (length(t) < 1e-3) { return 1.0; }
+
+            //let mag = sqrt(length(diffuse_vec)) * 4;
+            let dir = normalize(diffuse_vec);
+            let tdir = normalize(t);
+            var factor = pow(abs(dot(tdir, dir)), 4.0);
+            if (mag == 0) { factor = 0.0; }
+            let multiplier = ((1.0 - factor) + factor / (1.0 + mag));
+            let new_t = vec2f(t.x * multiplier, t.y * multiplier);
+            return filterweightGauss_o0(length(new_t), 0.4).x;
+            //return filterweightMitchell2D(new_t);
+        }
+
 
         function getImageForFilter(w, h, kernelFunc) {
             // The impulse response of a function
@@ -264,9 +309,19 @@
         drawImage(imageData);
         imageData = getImageForFilter(5, 5, (dpos) => filterweightGaussDy(dpos, 1.0).y);
         drawImage(imageData);
-        imageData = getImageForFilter(5, 5, (dpos) => filterweightGaussDx(dpos, 0.8).y);
+        imageData = getImageForFilter(4, 4, (dpos) => filterweightGaussDx(dpos, 1).y);
         drawImage(imageData);
-        imageData = getImageForFilter(5, 5, (dpos) => filterweightGaussDy(dpos, 0.8).y);
+        imageData = getImageForFilter(4, 4, (dpos) => filterweightGaussDy(dpos, 1).y);
+        drawImage(imageData);
+
+        showHTML("Laplacian:");
+        imageData = getImageForFilter(5, 5, (dpos) => filterweightGaussDxx(dpos, 1.0).y);
+        drawImage(imageData);
+        imageData = getImageForFilter(5, 5, (dpos) => filterweightGaussDyy(dpos, 1.0).y);
+        drawImage(imageData);
+        imageData = getImageForFilter(5, 5, (dpos) => filterweightGaussLaplacian(dpos, 0.6).y);
+        drawImage(imageData);
+        imageData = getImageForFilter(4, 4, (dpos) => filterweightGaussLaplacian(dpos, 0.6).y);
         drawImage(imageData);
 
         showHTML("Mitchell filter, using multiply and distance, respectively. You can see how with multiply, the diagonals don't really have a negative lobe:");
@@ -276,8 +331,9 @@
         imageData = getImageForFilter(8, 8, (dpos) => filterweightMitchell1D(length(dpos) / scale));
         drawImage(imageData);
 
-        const diffuse_vector = vec2f(0.2, 0.7);
-        diffuse_vector.y *= -1; // flip y
+        //const diffuse_vector = vec2f(0.2, 0.7);
+        const diffuse_vector = vec2f(0, 0);
+        // diffuse_vector.y *= -1; // flip y
 
         showHTML("My first attemt at a rotated anisotropic Guassian filter. Note the odd coverage:")
         function rotatedWrong(dpos) {
@@ -311,6 +367,15 @@
             return k.y;
         }
         imageData = getImageForFilter(15, 15, rotatedGaussian);
+        drawImage(imageData);
+
+
+        showHTML("The proper way, Gaussian  v2:")
+        function rotatedGaussian2(dpos) {
+            let k = filterWeightRotated(dpos, diffuse_vector, 0.5, 1.0);
+            return k;
+        }
+        imageData = getImageForFilter(3, 3, rotatedGaussian2);
         drawImage(imageData);
 
         showHTML("The proper way, Mitchell:")

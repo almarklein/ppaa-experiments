@@ -1,9 +1,11 @@
 """Utility to do a full-screen pass using a WGSL shader."""
 
 import os
+import time
 
 import wgpu
 import numpy as np
+
 
 shader_dir = os.path.abspath(os.path.join(__file__, "..", "..", "wgsl"))
 
@@ -119,6 +121,7 @@ class WgslFullscreenRenderer:
         self._write_texture(tex1, image)
 
         # Render!
+        t0 = time.perf_counter()
         command_encoder = self._device.create_command_encoder()
         render_pass = command_encoder.begin_render_pass(
             color_attachments=[attachment],
@@ -126,9 +129,14 @@ class WgslFullscreenRenderer:
         )
         render_pass.set_pipeline(self._pipeline)
         render_pass.set_bind_group(0, bind_group, [], 0, 99)
-        render_pass.draw(4, 1)
+        for i in range(100):
+            render_pass.draw(4, 1)
         render_pass.end()
         device.queue.submit([command_encoder.finish()])
+
+        device._poll_wait()  # wait
+        t1 = time.perf_counter()
+        self.last_time = t1 - t0
 
         return self._read_texture(tex2)
 

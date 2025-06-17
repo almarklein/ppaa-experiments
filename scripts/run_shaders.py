@@ -144,26 +144,31 @@ class Renderer_glsl_ddaa1(GlslFullscreenRenderer):
     SHADER = "ddaa1.glsl"
 
 
+class Renderer_wgsl_ddaa2(WgslFullscreenRenderer):
+    SHADER = "ddaa2.wgsl"
+
+
 # ----------------------------  AA filtering
 
 for Renderer in [
-    # Stub
-    Renderer_glsl_smooth_aa,
-    Renderer_wgsl_smooth_aa,
-    # SSAA
-    Renderer_wgsl_ssaax2,
-    Renderer_wgsl_ssaax4,
-    Renderer_wgsl_ssaax8,
-    # FXAA
-    Renderer_glsl_fxaa2,
-    Renderer_wgsl_fxaa2,
+    # # Stub
+    # Renderer_glsl_smooth_aa,
+    # Renderer_wgsl_smooth_aa,
+    # # SSAA
+    # Renderer_wgsl_ssaax2,
+    # Renderer_wgsl_ssaax4,
+    # Renderer_wgsl_ssaax8,
+    # # FXAA
+    # Renderer_glsl_fxaa2,
+    # Renderer_wgsl_fxaa2,
     Renderer_wgsl_fxaa311,
-    Renderer_glsl_axaa,
-    # # Other directional
-    Renderer_wgsl_dlaa,
+    # Renderer_glsl_axaa,
+    # # # Other directional
+    # Renderer_wgsl_dlaa,
     # # Almar's
-    Renderer_glsl_mcaa,
-    Renderer_glsl_ddaa1,
+    # Renderer_glsl_mcaa,
+    # Renderer_glsl_ddaa1,
+    Renderer_wgsl_ddaa2,
 ]:
     print(f"Rendering with {Renderer.__name__}")
     renderer = Renderer()
@@ -187,6 +192,13 @@ for Renderer in [
         im1[:, :, 3] = 255  # set opaque, just in case
 
         im2 = renderer.render(im1)
+
+        if hasattr(renderer, "last_time"):
+            renderer.render(im1)
+            print(f"    {renderer.last_time * 1000:0.02f} ms")
+            renderer.render(im1)
+            print(f"    {renderer.last_time * 1000:0.02f} ms")
+
         Image.fromarray(im2).convert("RGB").save(output_fname)
         print(f"    Wrote {output_fname}")
 
@@ -195,12 +207,12 @@ print("Done!")
 # ---------------------------- Upsampling
 
 for Renderer in [
-    Renderer_wgsl_up_box,
-    Renderer_wgsl_up_triangle,
-    Renderer_wgsl_up_gaussian,
-    Renderer_wgsl_up_bspline,
-    Renderer_wgsl_up_mitchell,
-    Renderer_wgsl_up_catmull,
+    # Renderer_wgsl_up_box,
+    # Renderer_wgsl_up_triangle,
+    # Renderer_wgsl_up_gaussian,
+    # Renderer_wgsl_up_bspline,
+    # Renderer_wgsl_up_mitchell,
+    # Renderer_wgsl_up_catmull,
 ]:
     print(f"Upsampling with {Renderer.__name__}")
     renderer = Renderer()
@@ -218,6 +230,7 @@ for Renderer in [
         im1[:, :, 3] = 255  # set opaque, just in case
 
         im2 = renderer.render(im1)
+
         Image.fromarray(im2).convert("RGB").save(output_fname)
         print(f"    Wrote {output_fname}")
 
