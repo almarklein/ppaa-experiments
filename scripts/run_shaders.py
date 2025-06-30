@@ -137,6 +137,17 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
     shutil.copy(input_fname, output_fname)
 
 
+# ----------------------------  Select experiment
+
+# When using a subset of renderers, only these shaders are run, and they are many times and measure performance.
+# Handy during development.
+
+# Default no subset
+exp_renderers = None
+
+exp_renderers = [Renderer_wgsl_fxaa311, Renderer_wgsl_ddaa2]
+
+
 # ----------------------------  AA filtering
 
 for Renderer in [
@@ -149,6 +160,8 @@ for Renderer in [
     Renderer_wgsl_fxaa311,
     Renderer_wgsl_ddaa2,
 ]:
+    if exp_renderers and Renderer not in exp_renderers:
+        continue
     print(f"Rendering with {Renderer.__name__}")
     renderer = Renderer()
     hirez_flag = ""
@@ -172,11 +185,11 @@ for Renderer in [
 
         im2 = renderer.render(im1)
 
-        if hasattr(renderer, "last_time"):
+        if exp_renderers:
             renderer.render(im1)
-            print(f"    {renderer.last_time * 1000:0.02f} ms")
+            print(f"    {renderer.last_time * 1000:0.03f} ms")
             renderer.render(im1)
-            print(f"    {renderer.last_time * 1000:0.02f} ms")
+            print(f"    {renderer.last_time * 1000:0.03f} ms")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
         print(f"    Generated {output_fname}")
@@ -191,6 +204,8 @@ for Renderer in [
     Renderer_wgsl_up_mitchell,
     Renderer_wgsl_up_catmull,
 ]:
+    if exp_renderers and Renderer not in exp_renderers:
+        continue
     print(f"Upsampling with {Renderer.__name__}")
     renderer = Renderer()
 
@@ -208,11 +223,11 @@ for Renderer in [
 
         im2 = renderer.render(im1)
 
-        if hasattr(renderer, "last_time"):
+        if exp_renderers:
             renderer.render(im1)
-            print(f"    {renderer.last_time * 1000:0.02f} ms")
+            print(f"    {renderer.last_time * 1000:0.03f} ms")
             renderer.render(im1)
-            print(f"    {renderer.last_time * 1000:0.02f} ms")
+            print(f"    {renderer.last_time * 1000:0.03f} ms")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
         print(f"    Generated {output_fname}")

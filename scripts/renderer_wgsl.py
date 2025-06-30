@@ -91,7 +91,7 @@ class WgslFullscreenRenderer:
         wgsl = wgsl.replace("SCALE_FACTOR", str(float(self.SCALE_FACTOR)))
         return apply_templating(wgsl, **self._template_vars)
 
-    def render(self, image):
+    def render(self, image, benchmark=None):
         assert image.ndim == 3 and image.shape[2] == 4, "Image must be rgba"
         h, w = image.shape[:2]
 
@@ -152,14 +152,15 @@ class WgslFullscreenRenderer:
         )
         render_pass.set_pipeline(self._pipeline)
         render_pass.set_bind_group(0, bind_group, [], 0, 99)
-        for i in range(100):
+        niters = 100 if benchmark else 1
+        for i in range(niters):
             render_pass.draw(4, 1)
         render_pass.end()
         device.queue.submit([command_encoder.finish()])
 
         device._poll_wait()  # wait
         t1 = time.perf_counter()
-        self.last_time = t1 - t0
+        self.last_time = (t1 - t0) / niters
 
         return self._read_texture(tex2)
 
