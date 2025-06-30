@@ -5,37 +5,31 @@ Then use the viewer to inspect the result.
 """
 
 import os
+import shutil
 
 from PIL import Image
 import numpy as np
 
-from renderer_glsl import GlslFullscreenRenderer
 from renderer_wgsl import WgslFullscreenRenderer
 
 
-images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images"))
+src_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_src"))
+pre_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_pre"))
+all_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_all"))
 
-# No aa
+os.makedirs(all_images_dir, exist_ok=True)
 
+images_text = """
+Flat directory of all images. These are copied here from other locations, and
+produced by running shaders. You can delete this dir and run run_shaders.py
+to re-populate it.
+"""
 
-class Renderer_glsl_noaa(GlslFullscreenRenderer):
-    SHADER = "noaa.glsl"
-
-
-class Renderer_wgsl_noaa(WgslFullscreenRenderer):
-    SHADER = "noaa.wgsl"
-
-
-# Just smooth
-
-
-class Renderer_glsl_smooth_aa(GlslFullscreenRenderer):
-    SHADER = "smooth_aa.glsl"
+with open(os.path.join(all_images_dir, "README.md"), "bw") as f:
+    f.write(images_text.encode())
 
 
-class Renderer_wgsl_smooth_aa(WgslFullscreenRenderer):
-    SHADER = "smooth_aa.wgsl"
-
+# ---------------------------- Shaders classes
 
 # SSAA
 
@@ -61,60 +55,47 @@ class Renderer_wgsl_ssaax8(SSAAFullScreenRenderer):
     SCALE_FACTOR = 8
 
 
-class Renderer_wgsl_up_box(SSAAFullScreenRenderer):
+# Upsampling
+
+
+class Renderer_wgsl_up_nearest(SSAAFullScreenRenderer):
     SCALE_FACTOR = 0.25
-    FILTER = "Box"
+    FILTER = "nearest"
 
 
 class Renderer_wgsl_up_triangle(SSAAFullScreenRenderer):
     SCALE_FACTOR = 0.25
-    FILTER = "Triangle"
-
-
-class Renderer_wgsl_up_gaussian(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 0.25
-    FILTER = "Gaussian"
+    FILTER = "triangle"
 
 
 class Renderer_wgsl_up_bspline(SSAAFullScreenRenderer):
     SCALE_FACTOR = 0.25
-    FILTER = "BSpline"
+    FILTER = "bspline"
 
 
 class Renderer_wgsl_up_mitchell(SSAAFullScreenRenderer):
     SCALE_FACTOR = 0.25
-    FILTER = "Mitchell"
+    FILTER = "mitchell"
 
 
 class Renderer_wgsl_up_catmull(SSAAFullScreenRenderer):
     SCALE_FACTOR = 0.25
-    FILTER = "CatmullRom"
+    FILTER = "catmull"
 
 
-# FXAA
+# PPAA filters
 
 
 class Renderer_wgsl_fxaa2(WgslFullscreenRenderer):
     SHADER = "fxaa2.wgsl"
 
 
-class Renderer_glsl_fxaa2(GlslFullscreenRenderer):
-    SHADER = "fxaa2.glsl"
-
-
 class Renderer_wgsl_fxaa311(WgslFullscreenRenderer):
     SHADER = "fxaa311.wgsl"
 
 
-class Renderer_glsl_axaa(GlslFullscreenRenderer):
-    SHADER = "axaa.glsl"
-
-
-# Other directional
-
-
-class Renderer_wgsl_dlaa(WgslFullscreenRenderer):
-    SHADER = "dlaa.wgsl"
+class Renderer_wgsl_ddaa2(WgslFullscreenRenderer):
+    SHADER = "ddaa2.wgsl"
 
 
 # SMAA: Subpixel Morphological Anti Aliasing
@@ -127,55 +108,59 @@ class Renderer_wgsl_dlaa(WgslFullscreenRenderer):
 # https://www.intel.com/content/www/us/en/developer/articles/technical/conservative-morphological-anti-aliasing-20.html
 
 
-# Almar's experiments
+# ---------------------------- Copy source images
+
+for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+    name = fname.rpartition(".")[0]
+
+    input_fname = os.path.join(src_images_dir, fname)
+    output_fname = os.path.join(all_images_dir, fname)
+    shutil.copy(input_fname, output_fname)
+
+    # Hirez versions
+    if fname in ["lines.png", "circles.png"]:
+        for times in [2, 4, 8]:
+            fname = f"{name}x{times}.png"
+            input_fname = os.path.join(src_images_dir, fname)
+            output_fname = os.path.join(all_images_dir, fname)
+            shutil.copy(input_fname, output_fname)
 
 
-class Renderer_glsl_mcaa(GlslFullscreenRenderer):
-    SHADER = "mcaa.glsl"
+# ---------------------------- Copy pre-obtained images
 
+for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+    name = fname.rpartition(".")[0]
+    fname = f"{name}_axaa.png"
+    input_fname = os.path.join(pre_images_dir, fname)
+    output_fname = os.path.join(all_images_dir, fname)
 
-class Renderer_glsl_ddaa1(GlslFullscreenRenderer):
-    SHADER = "ddaa1.glsl"
-
-
-class Renderer_wgsl_ddaa2(WgslFullscreenRenderer):
-    SHADER = "ddaa2.wgsl"
+    shutil.copy(input_fname, output_fname)
 
 
 # ----------------------------  AA filtering
 
 for Renderer in [
-    # # Stub
-    # Renderer_glsl_smooth_aa,
-    # Renderer_wgsl_smooth_aa,
     # # SSAA
-    # Renderer_wgsl_ssaax2,
+    Renderer_wgsl_ssaax2,
     Renderer_wgsl_ssaax4,
-    # Renderer_wgsl_ssaax8,
+    Renderer_wgsl_ssaax8,
     # # FXAA
-    # Renderer_glsl_fxaa2,
-    # Renderer_wgsl_fxaa2,
-    # Renderer_wgsl_fxaa311,
-    # Renderer_glsl_axaa,
-    # # # Other directional
-    # Renderer_wgsl_dlaa,
-    # # Almar's
-    # Renderer_glsl_mcaa,
-    # Renderer_glsl_ddaa1,
-    # Renderer_wgsl_ddaa2,
+    Renderer_wgsl_fxaa2,
+    Renderer_wgsl_fxaa311,
+    Renderer_wgsl_ddaa2,
 ]:
     print(f"Rendering with {Renderer.__name__}")
     renderer = Renderer()
     hirez_flag = ""
     if issubclass(Renderer, WgslFullscreenRenderer) and Renderer.SCALE_FACTOR > 1:
         hirez_flag = "x" + str(Renderer.SCALE_FACTOR)
-    shadername = renderer.SHADER.replace(".", hirez_flag + ".", 1)
+    shadername = renderer.SHADER.split(".")[0] + hirez_flag
 
     for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
         name = fname.rpartition(".")[0]
 
-        input_fname = os.path.join(images_dir, f"{name}{hirez_flag}.png")
-        output_fname = os.path.join(images_dir, f"{name}_{shadername}.png")
+        input_fname = os.path.join(all_images_dir, f"{name}{hirez_flag}.png")
+        output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")
 
         if hirez_flag and not os.path.isfile(input_fname):
             continue
@@ -194,16 +179,14 @@ for Renderer in [
             print(f"    {renderer.last_time * 1000:0.02f} ms")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
-        print(f"    Wrote {output_fname}")
+        print(f"    Generated {output_fname}")
 
-print("Done!")
 
 # ---------------------------- Upsampling
 
 for Renderer in [
-    Renderer_wgsl_up_box,
+    # Renderer_wgsl_up_nearest,
     Renderer_wgsl_up_triangle,
-    Renderer_wgsl_up_gaussian,
     Renderer_wgsl_up_bspline,
     Renderer_wgsl_up_mitchell,
     Renderer_wgsl_up_catmull,
@@ -213,10 +196,10 @@ for Renderer in [
 
     for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
         name = fname.rpartition(".")[0]
-        shadername = f"up-{Renderer.FILTER}"
+        shadername = f"up_{Renderer.FILTER}"
 
-        input_fname = os.path.join(images_dir, fname)
-        output_fname = os.path.join(images_dir, f"{name}_{shadername}.png")
+        input_fname = os.path.join(all_images_dir, fname)
+        output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
@@ -232,6 +215,6 @@ for Renderer in [
             print(f"    {renderer.last_time * 1000:0.02f} ms")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
-        print(f"    Wrote {output_fname}")
+        print(f"    Generated {output_fname}")
 
 print("Done!")

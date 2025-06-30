@@ -79,7 +79,7 @@ else:
     fname = f"linesx{SCALE_FACTOR}.png"
 
 # Save
-filename = os.path.abspath(os.path.join(__file__, "..", "..", "images", fname))
+filename = os.path.abspath(os.path.join(__file__, "..", "..", "images_src", fname))
 img.save(filename)
 print(f"Image saved as '{fname}'")
 

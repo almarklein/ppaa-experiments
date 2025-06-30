@@ -49,11 +49,11 @@ fn filterweightBspline2D(t: vec2f) -> f32 {
     return filterweightBspline1D(length(t));
 }
 
-fn filterweightCatmullrom1D(t: f32) -> f32 {
+fn filterweightCatmull1D(t: f32) -> f32 {
     return filterweightCubic1D(t, 0.0f, 0.5f);
 }
-fn filterweightCatmullrom2D(t: vec2f) -> f32 {
-    return filterweightCatmullrom1D(length(t));
+fn filterweightCatmull2D(t: vec2f) -> f32 {
+    return filterweightCatmull1D(length(t));
 }
 
 fn filterweightMitchell1D(t1: f32) -> f32 {
