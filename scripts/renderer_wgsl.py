@@ -3,11 +3,31 @@
 import os
 import time
 
+import jinja2
 import wgpu
 import numpy as np
 
 
 shader_dir = os.path.abspath(os.path.join(__file__, "..", "..", "wgsl"))
+
+
+jinja_env = jinja2.Environment(
+    block_start_string="{$",
+    block_end_string="$}",
+    variable_start_string="{{",
+    variable_end_string="}}",
+    line_statement_prefix="$$",
+    undefined=jinja2.StrictUndefined,
+)
+
+
+def apply_templating(code, **kwargs):
+    t = jinja_env.from_string(code)
+    try:
+        return t.render(**kwargs)
+    except jinja2.UndefinedError as err:
+        raise ValueError(f"Cannot compose shader: {err.args[0]}") from None
+
 
 SHADER_TEMPLATE = """
 
@@ -64,9 +84,12 @@ class WgslFullscreenRenderer:
         self._device = None
         self._pipeline = None
         self._bind_group = None
+        self._template_vars = {}
 
     def _format_wgsl(self, wgsl):
-        return wgsl.replace("SCALE_FACTOR", str(float(self.SCALE_FACTOR)))
+        self._template_vars["scaleFactor"] = float(self.SCALE_FACTOR)
+        wgsl = wgsl.replace("SCALE_FACTOR", str(float(self.SCALE_FACTOR)))
+        return apply_templating(wgsl, **self._template_vars)
 
     def render(self, image):
         assert image.ndim == 3 and image.shape[2] == 4, "Image must be rgba"

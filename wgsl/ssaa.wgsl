@@ -1,4 +1,4 @@
-// FSAA filter
+// SSAA filter
 
 fn filterweightBox1D(t: f32) -> f32 {
     return f32(abs(t) < 0.5);
@@ -25,7 +25,7 @@ fn filterweightGaussian1D(t: f32) -> f32 {
 }
 fn filterweightGaussian2D(t: vec2f) -> f32 {
     return filterweightGaussian1D(length(t));
-    // The below produces the same result except for some float errors
+    // Note: the below produces the same result except for some float errors
     // return filterweightGaussian1D(t.x) * filterweightGaussian1D(t.y);
 }
 
@@ -34,38 +34,38 @@ fn filterweightCubic1D(t1: f32, B: f32, C: f32) -> f32 {
     var w = 0.0f;
     let t2 = t * t;
     let t3 = t * t * t;
-    if (t < 1.0) {
-        w = (12.0 - 9.0 * B - 6 * C) * t3 + (-18.0 + 12.0 * B + 6.0 * C) * t2 + (6.0 - 2.0 * B);
-    } else if (t <= 2.0) {
+    if t < 1.0 {
+        w = (12.0 - 9.0 * B - 6.0 * C) * t3 + (-18.0 + 12.0 * B + 6.0 * C) * t2 + (6.0 - 2.0 * B);
+    } else if t <= 2.0 {
         w = (-B - 6.0 * C) * t3 + (6.0 * B + 30.0 * C) * t2 + (-12.0 * B - 48.0 * C) * t + (8.0 * B + 24.0 * C);
     }
     return w / 6.0;
 }
 
-fn filterweightBSpline1D(t: f32) -> f32 {
+fn filterweightBspline1D(t: f32) -> f32 {
     return filterweightCubic1D(t, 1.0f, 0.0f);
 }
-fn filterweightBSpline2D(t: vec2f) -> f32 {
-    return filterweightBSpline1D(length(t));
+fn filterweightBspline2D(t: vec2f) -> f32 {
+    return filterweightBspline1D(length(t));
 }
 
-fn filterweightCatmullRom1D(t: f32) -> f32 {
+fn filterweightCatmullrom1D(t: f32) -> f32 {
     return filterweightCubic1D(t, 0.0f, 0.5f);
 }
-fn filterweightCatmullRom2D(t: vec2f) -> f32 {
-    return filterweightCatmullRom1D(length(t));
+fn filterweightCatmullrom2D(t: vec2f) -> f32 {
+    return filterweightCatmullrom1D(length(t));
 }
 
-fn filterweightMitchell1D(t: f32) -> f32 {
-    // TODO: if we will in B and C, we can simplify the formula!
-    return filterweightCubic1D(t, 1 / 3.0f, 1 / 3.0f);
+fn filterweightMitchell1D(t1: f32) -> f32 {
+    // Note: writing out the formula for this specific B and C does not seem to help performance.
+    return filterweightCubic1D(t1, 1 / 3.0f, 1 / 3.0f);
+
 }
 fn filterweightMitchell2D(t: vec2f) -> f32 {
     return filterweightMitchell1D(length(t));
-    // The below does *not* produce the same result. The diagonals won't have the negative lobes.
+    // Note: the below does *not* produce the same result. The diagonals won't have the negative lobes.
     // return filterweightMitchell1D(t.x) *  filterweightMitchell1D(t.y);
 }
-
 
 
 fn aaShader(
@@ -78,55 +78,81 @@ fn aaShader(
     // The size of the source texture
     let resolution = vec2<f32>(textureDimensions(tex).xy);
 
-    // Get the coord expressed in pixels (for the source texture)
-    // TODO -0.5!!!
-    let fpos: vec2f = texCoord * resolution;  // the pos for this fragment in the source texture
-    let ipos: vec2i = vec2i(fpos);  // floored
-    let tpos: vec2f = fpos - vec2f(ipos);  // the t offset for the current pos
+    // Get the coord expressed in float pixels (for the source texture). The pixel centers are at 0.5, 1.5, 2.5, etc.
+    let fpos1: vec2f = texCoord * resolution;
+    // Get the integer pixel index into the source texture (floor, not round!)
+    let ipos: vec2i = vec2i(fpos1);
+    // Project the rounded pixel location back to float, representing the center of that pixel
+    let fpos2 = vec2f(ipos) + 0.5;
+    // Get the offset for the current sample
+    let tpos = fpos1 - fpos2;
+    // The texcoord, snapped to the whole pixel in the source texture
+    let texCoordSnapped = fpos2 / resolution;
 
-    //  X-----X---o-X----X   with X the source pixels
-    //        |   |
-    //      ipos  fpos
+    //  0.   1.   2.   3.   4.   position
+    //   ____ ____ ____ ____
+    //  |    |    | x  |    |
+    //  |____|____|____|____|
+    //     0    1    2    3      pixel index
+    //
+    //  Image the sample at x:
+    //
+    //  fpos1 = 2.4
+    //  ipos  = 2
+    //  fpos2 = 2.5
+    //  tpos  = -0.1
 
-    // Get the size of the patch to sample, i.e. the support for the kernel.
-    // Ideally the kernelSupportFactor would be i32((scaleFactor * 1.99)) so that a cubic spline can be fully sampled,
-    // but that would result in a lot of samples to be made (100 samples for fsaax2 (scaleFactor 2). With the below it'd be 36.
-    // It does mean that the tails of the filter are not used, but since that more or less means more smoothing, this is allright, because
-    // we're already downsampling; it's a good compromise.
-    // What's important is that for scaleFactor of 1 and lower, the kernel support is [-1 0 1 2].
-    let kernelSupportFactor = i32(scaleFactor * 0.5);
-    let delta1 = -1 - kernelSupportFactor;
-    let dalta2 = 3 + kernelSupportFactor;
+    // To determine the size of the patch to sample, i.e. the support for the
+    // kernel. we need the scale factor between the source and target texture.
+    // Ideally the kernelSupportFactor would be int((scaleFactor * 1.99)) so that a
+    // cubic spline can be fully sampled, but that would result in a lot of samples
+    // to be made (100 samples for fsaax2 (scaleFactor 2). With the below it'd be
+    // 36. It does mean that the tails of the filter are not used, but since that
+    // more or less means more smoothing, this is allright, because we're already
+    // downsampling; it's a good compromise. What's important is that for
+    // scaleFactor of 1 and lower, the kernel support is [-1 0 1 2].
+    $$ set kernelSupportFactor = (scaleFactor * 0.5) | int
+    $$ set delta1 = -1 - kernelSupportFactor
+    $$ set delta2 = 3 + kernelSupportFactor
 
-    // The sigma (scale) of the filter scales with the scaleFactor, because it defines
-    // the cut-off frequency of the filter. But when we up-sample, we don't need a filter,
-    // and we go in pure interpolation mode, and the filter must match the resolution (== sample rate)
-    // of the source image.
-    let sigma = max(scaleFactor, 1.0);
+    // The sigma (scale) of the filter scales with the scaleFactor, because it
+    // defines the cut-off frequency of the filter. But when we up-sample, we don't
+    // need a filter, and we go in pure interpolation mode, and the filter must
+    // match the resolution (== sample rate) of the source image, i.e. one.
+    let sigma = max({{scaleFactor}}, 1.0);
 
+    // Prepare output
     var color = vec4<f32>(0.0, 0.0, 0.0, 0.0);
     var weight = 0.0;
-    for (var dy = delta1; dy < dalta2; dy = dy + 1) {
-        for (var dx = delta1; dx < dalta2; dx = dx + 1) {
-            let idelta = vec2i(dx, dy);
-            let t = vec2f(idelta) - tpos;
 
-            //let w = filterweightBox2D(t / sigma);
-            //let w = filterweightTriangle2D(t / sigma);
-            //let w = filterweightGaussian2D(t / sigma);
-            let w = filterweightMitchell2D(t / sigma);
+    // Here's a loop in the shader. This works, but is much slower than a templated (unrolled) loop.
+    //
+    // for (var dy = delta1; dy < delta2; dy = dy + 1) {
+    //     for (var dx = delta1; dx < delta2; dx = dx + 1) {
+    //         let idelta = vec2i(dx, dy);
+    //         let t = vec2f(idelta) - tpos;
+    //         let w = filterweightMitchell2D(t / sigma);
+    //         // Get index into the image
+    //         var index = ipos + idelta;
+    //         let sample = textureLoad(tex, index, 0);
+    //         color = color + sample * w;
+    //         weight = weight + w;
+    //     }
+    // }
 
-            // Get index into the image, texture wrap
-            // TODO: texture wrap?
-            var index = ipos + idelta;
-            //index = select(index, -index, index < 0);
-            //index = select(index, resolution - index, index >= resolution);
+    // Templated loop
+    var t: vec2f;
+    var w: f32;
+    $$ for dy in range(delta1, delta2)
+    $$ for dx in range(delta1, delta2)
+        t = vec2f({{dx}}, {{dy}}) - tpos;
+        w = filterweight{{filter.lower().capitalize()}}2D(t / sigma);
+        //color += w * textureLoad(tex, ipos + idelta, 0);  no sampling, and slower!
+        color += w * textureSampleLevel(tex, smp, texCoordSnapped, 0.0, vec2i({{dx}}, {{dy}}));
+        weight += w;
+    $$ endfor
+    $$ endfor
 
-            let sample = textureLoad(tex, index, 0);
-            color = color + sample * w;
-            weight = weight + w;
-        }
-    }
-    if (weight == 0.0) { weight = 1.0; }
+    if weight == 0.0 { weight = 1.0; }
     return color * (1.0 / weight);
 }
