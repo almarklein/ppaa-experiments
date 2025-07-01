@@ -116,6 +116,10 @@ class Renderer_fxaa3(WgslFullscreenRenderer):
     SHADER = "fxaa3.wgsl"
 
 
+class Renderer_ddaa1(WgslFullscreenRenderer):
+    SHADER = "ddaa1.wgsl"
+
+
 class Renderer_ddaa2(WgslFullscreenRenderer):
     SHADER = "ddaa2.wgsl"
 
@@ -167,7 +171,7 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 # Default no subset
 exp_renderers = None
 
-# exp_renderers = [Renderer_fxaa3, Renderer_ddaa2]
+exp_renderers = [Renderer_fxaa3, Renderer_ddaa1]
 
 
 # ----------------------------  AA filtering
@@ -181,6 +185,7 @@ for Renderer in [
     Renderer_dlaa,
     Renderer_fxaa2,
     Renderer_fxaa3,
+    Renderer_ddaa1,
     Renderer_ddaa2,
 ]:
     if exp_renderers and Renderer not in exp_renderers:
