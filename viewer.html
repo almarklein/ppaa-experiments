@@ -164,6 +164,7 @@
             container.style.gridTemplateRows = `repeat(${Math.ceil(Math.sqrt(panelCount))}, 1fr)`;
 
             algorithms.forEach(algo => {
+                if (algo == 'ori') { algo = ''; }
                 let suffix = algo ? '_' + algo : '';
                 let src = `images_all/${imageName.split('.')[0]}${suffix}.png`
                 let label = algo || 'Original';
