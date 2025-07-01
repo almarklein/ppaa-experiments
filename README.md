@@ -3,9 +3,9 @@ Compare post-processing aa methods like FXAA
 
 A simple viewer is provided:
 
-* [Compare ppaa methods(https://almarklein.github.io/ppaa-experiments/viewer.html#&algs=ori,ssaax8,dlaa,fxaa3,axaa,ddaa2)
-* [Compare ssaa levels(https://almarklein.github.io/ppaa-experiments/viewer.html#&algs=ori,ssaax8,ssaax4,ssaax2)
-* [Compare upsampling methods(https://almarklein.github.io/ppaa-experiments/viewer.html#&algs=up_nearest,up_triangle,up_bspline,up_mitchell,up_catmull)
+* [Compare ppaa methods](https://almarklein.github.io/ppaa-experiments/viewer.html#&algs=ori,ssaax8,dlaa,fxaa3,axaa,ddaa2)
+* [Compare ssaa levels](https://almarklein.github.io/ppaa-experiments/viewer.html#&algs=ori,ssaax8,ssaax4,ssaax2)
+* [Compare upsampling methods](https://almarklein.github.io/ppaa-experiments/viewer.html#&algs=up_nearest,up_tent,up_bspline,up_mitchell,up_catmull)
 
 
 ## Goals
