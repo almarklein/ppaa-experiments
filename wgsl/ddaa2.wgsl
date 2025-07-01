@@ -1,3 +1,10 @@
+// ddaa2.wgsl version 2.1
+//
+// Directional Diffusion Anti Aliasinng (DDAA) version 2: smooth along the edges based on Scharr kernel, and perform edge-search to better support horizontal/vertical edges.
+//
+// v0: original (2013): https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
+// v1: ported to wgsl and tweaked (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
+// v2: added edge search (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl
 
 // ========== DDAA CONFIG ==========
 
@@ -49,7 +56,24 @@ fn rgb2luma(rgb: vec3f) -> f32 {
 }
 
 
-fn get_subpixel_offset_for_long_edge(tex: texture_2d<f32>, samp: sampler, texCoord: vec2f, pixelStep: vec2f, isHorizontal: bool, stepLength: f32, gradientScaled: f32, lumaCenter: f32, lumaLocalAverage: f32) -> f32 {
+fn get_subpixel_offset_for_long_edge(tex: texture_2d<f32>, samp: sampler, texCoord: vec2f, pixelStep: vec2f, isHorizontal: bool, lumaCenter: f32, luma1: f32, luma2: f32) -> vec2f {
+
+    // Choose the step size (one pixel) accordingly.
+    var stepLength = select(pixelStep.x, pixelStep.y, isHorizontal);
+
+    // Gradient in the corresponding direction, normalized.
+    let gradient1 = luma1 - lumaCenter;
+    let gradient2 = luma2 - lumaCenter;
+    let gradientScaled = 0.25 * max(abs(gradient1), abs(gradient2));
+
+    // Average luma in the current direction.
+    var lumaLocalAverage = 0.0;
+    if abs(gradient1) >= abs(gradient2) {
+        stepLength = -stepLength;  // switch the direction
+        lumaLocalAverage = 0.5 * (luma1 + lumaCenter);
+    } else {
+        lumaLocalAverage = 0.5 * (luma2 + lumaCenter);
+    }
 
     // Shift UV in the correct direction by half a pixel.
     // Compute offset (for each iteration step) in the right direction.
@@ -115,33 +139,30 @@ fn get_subpixel_offset_for_long_edge(tex: texture_2d<f32>, samp: sampler, texCoo
         }
     }
 
-    // Compute the distances to each side edge of the edge (!).
+    // Compute the distances to each side edge of the edge segment
     var distance1 = select(texCoord.y - uv1.y, texCoord.x - uv1.x, isHorizontal);
     var distance2 = select(uv2.y - texCoord.y, uv2.x - texCoord.x, isHorizontal);
 
-    // In which direction is the side of the edge closer ?
-    let isDirection1 = distance1 < distance2;
-    let distanceFinal = min(distance1, distance2);
-
-    // Thickness of the edge.
-    let edgeThickness = (distance1 + distance2);
-
-    // Is the luma at center smaller than the local average ?
-    let isLumaCenterSmaller = lumaCenter < lumaLocalAverage;
+    // UV offset: read in the direction of the closest side of the edge.
+    let pixelOffset = - min(distance1, distance2) / (distance1 + distance2) + 0.5;
 
     // If the luma at center is smaller than at its neighbor, the delta luma at each end should be positive (same variation).
-    let correctVariation1 = (lumaEnd1 < 0.0) != isLumaCenterSmaller;
-    let correctVariation2 = (lumaEnd2 < 0.0) != isLumaCenterSmaller;
+    let isLumaCenterSmaller = lumaCenter < lumaLocalAverage;
+    var correctVariation: bool;
+    if (distance1 < distance2) {
+        correctVariation = (lumaEnd1 < 0.0) != isLumaCenterSmaller;
+    } else {
+        correctVariation = (lumaEnd2 < 0.0) != isLumaCenterSmaller;
+    }
 
-    // Only keep the result in the direction of the closer side of the edge.
-    var correctVariation = select(correctVariation2, correctVariation1, isDirection1);
-
-    // UV offset: read in the direction of the closest side of the edge.
-    let pixelOffset = - distanceFinal / edgeThickness + 0.5;
-
-    // If the luma variation is incorrect, do not offset.
-    var finalOffset = select(0.0, pixelOffset, correctVariation);
-    return finalOffset;
+    // Return subpixel texCoord offset
+    if (!correctVariation) {
+        return vec2f(0.0);
+    } else if isHorizontal {
+        return vec2f(0.0, pixelOffset * stepLength);
+    } else {
+        return vec2f(pixelOffset * stepLength, 0.0);
+    }
 }
 
 
@@ -206,6 +227,7 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
         diffuseDirection = vec2f(0.0, 0.0);
         diffuseStrength = 0.0;
     }
+    diffuseStrength = min(1.0, diffuseStrength);
 
     // Is the local edge horizontal or vertical ?
     let edgeHorizontal = abs(-2.0 * lumaW + lumaWCorners) + abs(-2.0 * lumaCenter + lumaSUp) * 2.0 + abs(-2.0 * lumaE + lumaECorners);
@@ -245,66 +267,38 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     // the length of the edge segment (successive horizontal/vertical pixels), and the use that to calculate the subpixel
     // texture coordinate offset, perpendicular to the edge. So technically this is diffusion perpendicular to the edge,
     // but in a controlled manner to smooth the step/jaggy.
-    var texCoordDeltaEdgeOffset = vec2f(0.0);
-
-    if steepness < 0.75 && diffuseStrength > 0.5 && edgeOffsetFactor > 0.2 {
-
-        // Choose the step size (one pixel) accordingly.
-        var stepLength = select(pixelStep.x, pixelStep.y, isHorizontal);
-        // Select the two neighboring texels lumas in the opposite direction to the local edge.
-
-        // Which direction is the steepest ?
-        let is1Steepest = abs(gradient1) >= abs(gradient2);
-
-        // Gradient in the corresponding direction, normalized.
-        let gradientScaled = 0.25 * max(abs(gradient1), abs(gradient2));
-
-        // Average luma in the correct direction.
-        var lumaLocalAverage = 0.0;
-        if is1Steepest {
-            // Switch the direction
-            stepLength = -stepLength;
-            lumaLocalAverage = 0.5 * (luma1 + lumaCenter);
-        } else {
-            lumaLocalAverage = 0.5 * (luma2 + lumaCenter);
-        }
-
-        var finalOffset = get_subpixel_offset_for_long_edge(tex, smp, texCoord, pixelStep, isHorizontal, stepLength, gradientScaled, lumaCenter, lumaLocalAverage) ;
-         // Full weighted average of the luma over the 3x3 neighborhood.
-        let lumaAverage = (1.0 / 12.0) * (2.0 * (lumaSUp + lumaWRight) + lumaWCorners + lumaECorners);
-        let subPixelOffset1 = clamp(abs(lumaAverage - lumaCenter) / lumaRange, 0.0, 1.0);
-        let subPixelOffset2 = (-2.0 * subPixelOffset1 + 3.0) * subPixelOffset1 * subPixelOffset1;
-        // Compute a sub-pixel offset based on this delta.
-        let subPixelOffsetFinal = subPixelOffset2 * subPixelOffset2 * SUBPIXEL_QUALITY;
-
-        // Pick the biggest of the two offsets.
-        finalOffset = max(finalOffset, subPixelOffsetFinal);
-
-        if isHorizontal {
-            texCoordDeltaEdgeOffset = vec2f(0.0, finalOffset * stepLength);
-        } else {
-            texCoordDeltaEdgeOffset = vec2f(finalOffset * stepLength, 0.0);
-        }
-    } else {
-        // Only use the directional diffusion element
-        edgeOffsetFactor = 0.0;
+    var subpixelEdgeOffset = vec2f(0.0);
+    if true {//(diffuseStrength >= 0.0) {
+        subpixelEdgeOffset = get_subpixel_offset_for_long_edge(tex, smp, texCoord, pixelStep, isHorizontal, lumaCenter, luma1, luma2);
     }
 
-    // The step to take for the diffusion effect (blur in the direction of the edge)
-    let diffuseStep = diffuseDirection * pixelStep;
-    let texCoordDeltaDiffuse1 = min(1.0, diffuseStrength) * diffuseStep;
-    let texCoordDeltaDiffuse2 = - min(1.0, diffuseStrength) * diffuseStep;
+    // The step to take for the diffusion effect (blur in the direction of the
+    // edge). Note that for diagonal-ish lines, the most blur is obtained when
+    // stepping halfway to the next pixel, i.e. 0.707, because then the
+    // neighbour pixels are taken into account more. Let's use no more than 0.6
+    // because then for horizontal lines, the max diffusion kernel is
+    // effectively [0.6, 2 * 0.5, 0.6] which is still somewhat bell-shaped.
+    // Actually, if we use 0.5, we trade a bit more smoothness for perceived sharpness.
+    // Make its 0.51 so it does not look like some sort of offset.
+    let max_step_size = 0.51;
+    let diffuseStep = diffuseDirection * pixelStep * (max_step_size * diffuseStrength);
 
     // Compose the three texture coordinates, combining the ede-offset with the diffusion componennt, depending on the steepness of the edge.
-    let texCoord0 = texCoord + edgeOffsetFactor * texCoordDeltaEdgeOffset;
-    let texCoord1 = texCoord + texCoordDeltaDiffuse1 + edgeOffsetFactor * texCoordDeltaEdgeOffset;
-    let texCoord2 = texCoord + texCoordDeltaDiffuse2 + edgeOffsetFactor * texCoordDeltaEdgeOffset;
+    let texCoord0 = texCoord + subpixelEdgeOffset;
+    let texCoord1 = texCoord - diffuseStep;
+    let texCoord2 = texCoord + diffuseStep;
+
+    // We mix the effects of the edge-search (FXAA 311 method) with the directional diffusion.
+    // The factor below determines their ratio. We base it off the subpixelEdgeOffset,
+    // which goes towards 0.5 for horizontal/vertical edges, and towards 0 for diagonal edges.
+    // The multiplier (2.0) is actually relatively invariant for the end result.
+    let diffuseVsEdge = sqrt(min(1.0, length(2.0 * subpixelEdgeOffset / pixelStep)));
 
     // Sample the final color
-    var finalColor: vec3f;
-    finalColor = 0.34 * textureSampleLevel(tex, smp, texCoord0, 0.0).rgb;
-    finalColor += 0.33 * textureSampleLevel(tex, smp, texCoord1, 0.0).rgb;
-    finalColor += 0.33 * textureSampleLevel(tex, smp, texCoord2, 0.0).rgb;
+    var finalColor = vec3f(0.0);
+    finalColor += diffuseVsEdge * textureSampleLevel(tex, smp, texCoord0, 0.0).rgb;
+    finalColor += (1.0 - diffuseVsEdge) * 0.5 * textureSampleLevel(tex, smp, texCoord1, 0.0).rgb;
+    finalColor += (1.0 - diffuseVsEdge) * 0.5 * textureSampleLevel(tex, smp, texCoord2, 0.0).rgb;
 
     return vec4f(finalColor, centerSample.a);
 }

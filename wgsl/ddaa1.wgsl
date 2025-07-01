@@ -1,7 +1,9 @@
-// ddaa.wgsl version 1.1
+// ddaa1.wgsl version 1.1
 //
-// Original (2013): https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
-// Ported to wgsl and tweaked (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
+// Directional Diffusion Anti Aliasinng (DDAA) version 1: Smooth along the edges based on Scharr kernel.
+//
+// v0: original (2013): https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
+// v1: ported to wgsl and tweaked (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
 //
 // This is the predecessor to ddaa2. It is included for comparison, and because its simpler and faster than ddaa2.
 
@@ -107,15 +109,17 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     // The step to take for the diffusion effect (blur in the direction of the
     // edge). Note that for diagonal-ish lines, the most blur is obtained when
     // stepping halfway to the next pixel, i.e. 0.707, because then the
-    // neighbour pixels are taken into account more. We select a max of 0.6
+    // neighbour pixels are taken into account more. Let's use no more than 0.6
     // because then for horizontal lines, the max diffusion kernel is
-    // effectively [0.6, 2 * 0.4, 0.6] which is still somewhat bell-shaped.
-    let max_step_size = 0.5;
+    // effectively [0.6, 2 * 0.5, 0.6] which is still somewhat bell-shaped.
+    // Actually, if we use 0.5, we trade a bit more smoothness for perceived sharpness.
+    // Make its 0.51 so it does not look like some sort of offset.
+    let max_step_size = 0.51;
     let diffuseStep = diffuseDirection * pixelStep * (max_step_size * diffuseStrength);
 
     // Compose the texture coordinates
-    let texCoord1 = texCoord + diffuseStep;
-    let texCoord2 = texCoord - diffuseStep;
+    let texCoord1 = texCoord - diffuseStep;
+    let texCoord2 = texCoord + diffuseStep;
 
     // Sample the final color
     var finalColor = vec3f(0.0);
