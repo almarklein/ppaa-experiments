@@ -17,7 +17,7 @@ jobs:
         run: |
           mkdir output
           cp viewer.html output/viewer.html
-          cp -r image_all output/images_all
+          cp -r images_all output/images_all
       - name: Upload
         uses: actions/upload-pages-artifact@v3
         with:
