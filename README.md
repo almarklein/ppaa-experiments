@@ -1,5 +1,5 @@
 # ppaa-experiments
-Compare post-processing aa methods like FXAA
+Compare post-processing aa methods (and ssaa)
 
 A simple viewer is provided:
 
