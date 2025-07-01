@@ -69,13 +69,27 @@
     <div id="container"></div>
 
     <script>
+        // Constants
+
         const imageNames = ['lines.png', 'circles.png', 'synthetic.png', 'egypt.png'];
-        //const algorithms = ['', 'ssaax8', 'ssaax2', 'fxaa3', 'axaa', 'ddaa2'];
-        const algorithms = ['up_nearest', 'up_triangle', 'up_bspline', 'up_mitchell', 'up_catmull'];
+        const up_algorithms = ['up_nearest', 'up_triangle', 'up_bspline', 'up_mitchell', 'up_catmull'];
+        const aa_algorithms = ['ssaax8', 'ssaax2', 'fxaa3', 'axaa', 'ddaa2'];
+
+        // State
+
+        let algorithms = [];
+        let imageName = '';
+        let scale = 1, offsetX = 0, offsetY = 0;
+        let isPanning = false, startX, startY;
+
+        // DOM elements
+
         const container = document.getElementById('container');
         const imgSelect = document.getElementById('imageSelect');
         const resetButton = document.getElementById('resetZoom');
         const refreshButton = document.getElementById('refreshImages');
+
+        // Tweak / fill DOm elements
 
         if (window.location.protocol === 'file:') {
             refreshButton.style.display = 'inline-block';
@@ -88,10 +102,62 @@
             imgSelect.appendChild(option);
         });
 
-        let scale = 1, offsetX = 0, offsetY = 0;
-        let isPanning = false, startX, startY;
+        // Handlers
 
-        function createPanels(imageName) {
+        refreshButton.addEventListener('click', refreshImages);
+        resetButton.addEventListener('click', resetTransforms);
+        imgSelect.addEventListener('change', () => updateHash(imgSelect.value, algorithms));
+
+        window.addEventListener('hashchange', handleHashChange);
+        window.addEventListener('load', handleHashChange);
+
+        // Functions
+
+        function updateHash(img, algs) {
+            window.location.hash = "image=" + img + "&algs=" + algs.join(",");
+        }
+
+        function handleHashChange() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            let img = params.get("image") ?? "";
+            let algs = params.get("algs")?.split(',') ?? [];
+            algs = algs.filter(str => str !== "");
+
+            // console.log("handleHashChange", img, algs);
+
+            // Reset?
+            let need_reset = false;
+            if (img.length == 0) {
+                img = imageNames[0];
+                need_reset = true;
+            }
+            if (algs.length == 0) {
+                algs = aa_algorithms;
+                need_reset = true;
+            }
+
+            // Update?
+            let need_create_panels = false;
+            if (imageName != img) {
+                imageName = img;
+                need_create_panels = true;
+            }
+            if (!arraysEqual(algorithms, algs)) {
+                algorithms = algs;
+                need_create_panels = true;
+            }
+
+            if (need_reset) { window.setTimeout(() => updateHash(img, algs), 0); }
+            if (need_create_panels) { createPanels(); }
+
+        }
+
+        function arraysEqual(a, b) {
+            return a.length === b.length && a.every((val, i) => val === b[i]);
+        }
+
+        function createPanels() {
             container.innerHTML = '';
             const panelCount = algorithms.length;
             container.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(panelCount))}, 1fr)`;
@@ -186,16 +252,6 @@
 
         window.addEventListener('mouseup', () => isPanning = false);
 
-        resetButton.addEventListener('click', () => {
-            resetTransforms();
-        });
-
-        refreshButton.addEventListener('click', () => {
-            refreshImages();
-        });
-
-        imgSelect.addEventListener('change', () => createPanels(imgSelect.value));
-        window.addEventListener('load', () => createPanels(imgSelect.value));
     </script>
 </body>
 
