@@ -34,30 +34,28 @@ with open(os.path.join(all_images_dir, "README.md"), "bw") as f:
 
 class SSAAFullScreenRenderer(WgslFullscreenRenderer):
     SHADER = "ssaa.wgsl"
+    TEMPLATE_VARS = {
+        "scaleFactor": 1,
+        "filter": "mitchell",
+        "extraKernelSupport": None,
+        "optScale2": True,
+        "optCorners": True,
+    }
 
 
 # SSAA
 
 
 class Renderer_ssaax2(SSAAFullScreenRenderer):
-    TEMPLATE_VARS = {
-        "scaleFactor": 2,
-        "filter": "mitchell",
-    }
+    TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 2}
 
 
 class Renderer_ssaax4(SSAAFullScreenRenderer):
-    TEMPLATE_VARS = {
-        "scaleFactor": 4,
-        "filter": "mitchell",
-    }
+    TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 4}
 
 
 class Renderer_ssaax8(SSAAFullScreenRenderer):
-    TEMPLATE_VARS = {
-        "scaleFactor": 8,
-        "filter": "mitchell",
-    }
+    TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 8}
 
 
 # Upsampling
@@ -65,6 +63,7 @@ class Renderer_ssaax8(SSAAFullScreenRenderer):
 
 class Renderer_up_nearest(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
+        **SSAAFullScreenRenderer.TEMPLATE_VARS,
         "scaleFactor": 0.25,
         "filter": "nearest",
     }
@@ -72,13 +71,15 @@ class Renderer_up_nearest(SSAAFullScreenRenderer):
 
 class Renderer_up_triangle(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
+        **SSAAFullScreenRenderer.TEMPLATE_VARS,
         "scaleFactor": 0.25,
-        "filter": "triangle",
+        "filter": "tent",
     }
 
 
 class Renderer_up_bspline(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
+        **SSAAFullScreenRenderer.TEMPLATE_VARS,
         "scaleFactor": 0.25,
         "filter": "bspline",
     }
@@ -86,6 +87,7 @@ class Renderer_up_bspline(SSAAFullScreenRenderer):
 
 class Renderer_up_mitchell(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
+        **SSAAFullScreenRenderer.TEMPLATE_VARS,
         "scaleFactor": 0.25,
         "filter": "mitchell",
     }
@@ -93,6 +95,7 @@ class Renderer_up_mitchell(SSAAFullScreenRenderer):
 
 class Renderer_up_catmull(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
+        **SSAAFullScreenRenderer.TEMPLATE_VARS,
         "scaleFactor": 0.25,
         "filter": "catmull",
     }
@@ -164,7 +167,7 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 # Default no subset
 exp_renderers = None
 
-# exp_renderers = [Renderer_fxaa311, Renderer_ddaa2]
+# exp_renderers = [Renderer_fxaa3, Renderer_ddaa2]
 
 
 # ----------------------------  AA filtering
@@ -219,7 +222,7 @@ for Renderer in [
 # ---------------------------- Upsampling
 
 for Renderer in [
-    # Renderer_up_nearest,
+    Renderer_up_nearest,
     Renderer_up_triangle,
     Renderer_up_bspline,
     Renderer_up_mitchell,
