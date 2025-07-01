@@ -49,7 +49,7 @@ fn rgb2luma(rgb: vec3f) -> f32 {
 }
 
 
-fn get_subpixel_offset_for_long_edge(screenTexture: texture_2d<f32>, samp: sampler, texCoord: vec2f, pixelStep: vec2f, isHorizontal: bool, stepLength: f32, gradientScaled: f32, lumaCenter: f32, lumaLocalAverage: f32) -> f32 {
+fn get_subpixel_offset_for_long_edge(tex: texture_2d<f32>, samp: sampler, texCoord: vec2f, pixelStep: vec2f, isHorizontal: bool, stepLength: f32, gradientScaled: f32, lumaCenter: f32, lumaLocalAverage: f32) -> f32 {
 
     // Shift UV in the correct direction by half a pixel.
     // Compute offset (for each iteration step) in the right direction.
@@ -68,8 +68,8 @@ fn get_subpixel_offset_for_long_edge(screenTexture: texture_2d<f32>, samp: sampl
     var uv2 = currentUv + offset; // * QUALITY(0); // (quality 0 is 1.0)
 
     // Read the lumas at both current extremities of the exploration segment, and compute the delta wrt to the local average luma.
-    var lumaEnd1 = rgb2luma(textureSampleLevel(screenTexture, samp, uv1, 0.0).rgb);
-    var lumaEnd2 = rgb2luma(textureSampleLevel(screenTexture, samp, uv2, 0.0).rgb);
+    var lumaEnd1 = rgb2luma(textureSampleLevel(tex, samp, uv1, 0.0).rgb);
+    var lumaEnd2 = rgb2luma(textureSampleLevel(tex, samp, uv2, 0.0).rgb);
     lumaEnd1 = lumaEnd1 - lumaLocalAverage;
     lumaEnd2 = lumaEnd2 - lumaLocalAverage;
 
@@ -87,12 +87,12 @@ fn get_subpixel_offset_for_long_edge(screenTexture: texture_2d<f32>, samp: sampl
         for (var i: i32 = 2; i < ITERATIONS; i = i + 1) {
             // If needed, read luma in 1st direction, compute delta.
             if !reached1 {
-                lumaEnd1 = rgb2luma(textureSampleLevel(screenTexture, samp, uv1, 0.0).rgb);
+                lumaEnd1 = rgb2luma(textureSampleLevel(tex, samp, uv1, 0.0).rgb);
                 lumaEnd1 = lumaEnd1 - lumaLocalAverage;
             }
             // If needed, read luma in oposite direction, compute delta.
             if !reached2 {
-                lumaEnd2 = rgb2luma(textureSampleLevel(screenTexture, samp, uv2, 0.0).rgb);
+                lumaEnd2 = rgb2luma(textureSampleLevel(tex, samp, uv2, 0.0).rgb);
                 lumaEnd2 = lumaEnd2 - lumaLocalAverage;
             }
             // If the luma deltas at the current extremities is larger than the local gradient, we have reached the side of the edge.
@@ -145,31 +145,32 @@ fn get_subpixel_offset_for_long_edge(screenTexture: texture_2d<f32>, samp: sampl
 }
 
 
-fn aaShader(
-    screenTexture: texture_2d<f32>,
-    samp: sampler,
-    texCoord: vec2f,
-    scaleFactor: f32,  // assumed to be 1
-) -> vec4f {
 
-    let resolution = vec2f(textureDimensions(screenTexture));
+@fragment
+fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
+
+    let tex: texture_2d<f32> = colorTex;
+    let smp: sampler = texSampler;
+    let texCoord: vec2f = varyings.texCoord;
+
+    let resolution = vec2f(textureDimensions(tex));
     let pixelStep = 1.0 / resolution.xy;
 
     // Sample the center pixel
-    let centerSample = textureSampleLevel(screenTexture, samp, texCoord, 0.0);
+    let centerSample = textureSampleLevel(tex, smp, texCoord, 0.0);
     let lumaCenter = rgb2luma(centerSample.rgb);
 
     // Luma at the four direct neighbors of the current fragment.
-    let lumaN = rgb2luma(textureSampleLevel(screenTexture, samp, texCoord, 0.0, vec2i(0, 1)).rgb);
-    let lumaE = rgb2luma(textureSampleLevel(screenTexture, samp, texCoord, 0.0, vec2i(1, 0)).rgb);
-    let lumaS = rgb2luma(textureSampleLevel(screenTexture, samp, texCoord, 0.0, vec2i(0, -1)).rgb);
-    let lumaW = rgb2luma(textureSampleLevel(screenTexture, samp, texCoord, 0.0, vec2i(-1, 0)).rgb);
+    let lumaN = rgb2luma(textureSampleLevel(tex, smp, texCoord, 0.0, vec2i(0, 1)).rgb);
+    let lumaE = rgb2luma(textureSampleLevel(tex, smp, texCoord, 0.0, vec2i(1, 0)).rgb);
+    let lumaS = rgb2luma(textureSampleLevel(tex, smp, texCoord, 0.0, vec2i(0, -1)).rgb);
+    let lumaW = rgb2luma(textureSampleLevel(tex, smp, texCoord, 0.0, vec2i(-1, 0)).rgb);
 
     // Query the 4 remaining corners lumas.
-    let lumaNW = rgb2luma(textureSampleLevel(screenTexture, samp, texCoord, 0.0, vec2i(-1, 1)).rgb);
-    let lumaNE = rgb2luma(textureSampleLevel(screenTexture, samp, texCoord, 0.0, vec2i(1, 1)).rgb);
-    let lumaSW = rgb2luma(textureSampleLevel(screenTexture, samp, texCoord, 0.0, vec2i(-1, -1)).rgb);
-    let lumaSE = rgb2luma(textureSampleLevel(screenTexture, samp, texCoord, 0.0, vec2i(1, -1)).rgb);
+    let lumaNW = rgb2luma(textureSampleLevel(tex, smp, texCoord, 0.0, vec2i(-1, 1)).rgb);
+    let lumaNE = rgb2luma(textureSampleLevel(tex, smp, texCoord, 0.0, vec2i(1, 1)).rgb);
+    let lumaSW = rgb2luma(textureSampleLevel(tex, smp, texCoord, 0.0, vec2i(-1, -1)).rgb);
+    let lumaSE = rgb2luma(textureSampleLevel(tex, smp, texCoord, 0.0, vec2i(1, -1)).rgb);
 
     // Compute the range
     let lumaMin = min(lumaCenter, min(min(lumaS, lumaN), min(lumaW, lumaE)));
@@ -268,7 +269,7 @@ fn aaShader(
             lumaLocalAverage = 0.5 * (luma2 + lumaCenter);
         }
 
-        var finalOffset = get_subpixel_offset_for_long_edge(screenTexture, samp, texCoord, pixelStep, isHorizontal, stepLength, gradientScaled, lumaCenter, lumaLocalAverage) ;
+        var finalOffset = get_subpixel_offset_for_long_edge(tex, smp, texCoord, pixelStep, isHorizontal, stepLength, gradientScaled, lumaCenter, lumaLocalAverage) ;
          // Full weighted average of the luma over the 3x3 neighborhood.
         let lumaAverage = (1.0 / 12.0) * (2.0 * (lumaSUp + lumaWRight) + lumaWCorners + lumaECorners);
         let subPixelOffset1 = clamp(abs(lumaAverage - lumaCenter) / lumaRange, 0.0, 1.0);
@@ -301,9 +302,9 @@ fn aaShader(
 
     // Sample the final color
     var finalColor: vec3f;
-    finalColor = 0.34 * textureSampleLevel(screenTexture, samp, texCoord0, 0.0).rgb;
-    finalColor += 0.33 * textureSampleLevel(screenTexture, samp, texCoord1, 0.0).rgb;
-    finalColor += 0.33 * textureSampleLevel(screenTexture, samp, texCoord2, 0.0).rgb;
+    finalColor = 0.34 * textureSampleLevel(tex, smp, texCoord0, 0.0).rgb;
+    finalColor += 0.33 * textureSampleLevel(tex, smp, texCoord1, 0.0).rgb;
+    finalColor += 0.33 * textureSampleLevel(tex, smp, texCoord2, 0.0).rgb;
 
     return vec4f(finalColor, centerSample.a);
 }

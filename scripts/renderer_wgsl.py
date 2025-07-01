@@ -34,43 +34,28 @@ SHADER_TEMPLATE = """
 struct VertexInput {
     @builtin(vertex_index) index: u32,
 };
-
 struct Varyings {
-    @location(0) texcoord: vec2<f32>,
+    @location(0) texCoord: vec2<f32>,
     @builtin(position) position: vec4<f32>,
 };
 
-struct FragmentOutput {
-    @location(0) color: vec4<f32>,
-};
-
-@group(0) @binding(0)
-var theScreenTexture: texture_2d<f32>;
-@group(0) @binding(1)
-var theScreenSampler: sampler;
-
 @vertex
-fn vsMmain(in: VertexInput) -> Varyings {
+fn vs_main(in: VertexInput) -> Varyings {
     var positions = array<vec2<f32>,4>(
         vec2<f32>(0.0, 1.0), vec2<f32>(0.0, 0.0), vec2<f32>(1.0, 1.0), vec2<f32>(1.0, 0.0)
     );
     let pos = positions[in.index];
     var varyings: Varyings;
+    varyings.texCoord = vec2<f32>(pos.x, 1.0 - pos.y);
     varyings.position = vec4<f32>(pos * 2.0 - 1.0, 0.0, 1.0);
-    varyings.texcoord = vec2<f32>(pos.x, 1.0 - pos.y);
     return varyings;
 }
 
-AA_SHADER
+@group(0) @binding(0)
+var colorTex: texture_2d<f32>;
+@group(0) @binding(1)
+var texSampler: sampler;
 
-const theScaleFactor= f32({{ scaleFactor }});
-
-@fragment
-fn fsMain(varyings: Varyings) -> FragmentOutput {
-    var out : FragmentOutput;
-    out.color = aaShader(theScreenTexture, theScreenSampler, varyings.texcoord, theScaleFactor);
-    return out;
-}
 """
 
 
@@ -212,7 +197,7 @@ class WgslFullscreenRenderer:
         bind_group_layout = device.create_bind_group_layout(entries=binding_layout)
 
         # Get render pipeline
-        wgsl = SHADER_TEMPLATE.replace("AA_SHADER", self._shader)
+        wgsl = SHADER_TEMPLATE + self._shader
         wgsl = self._format_wgsl(wgsl)
 
         shader_module = device.create_shader_module(code=wgsl)

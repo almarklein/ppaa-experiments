@@ -6,8 +6,8 @@
 // Update   ver: ForserX (2018-2019)
 // https://github.com/ForserX/DLAA/blob/master/dlaa.hlsl
 //
-// Converted to wgsl, and adjusted for ppaa-research framework by Almar Klein (2025).
-// https://github.com/almarklein/ppaa-research/blob/main/wgsl/dlaa.wgsl
+// Converted to wgsl, and adjusted for ppaa-experiments framework by Almar Klein (2025).
+// https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/dlaa.wgsl
 
 
 fn Luminance(rgb: vec3f) -> f32 {
@@ -15,12 +15,13 @@ fn Luminance(rgb: vec3f) -> f32 {
     return dot(rgb, vec3f(0.2126, 0.7152, 0.0722));
 }
 
-fn aaShader(
-    tex: texture_2d<f32>,
-    smp: sampler,
-    texCoord: vec2<f32>,
-    scaleFactor: f32,  // assumed to be 1
-) -> vec4<f32> {
+
+@fragment
+fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
+
+    let tex: texture_2d<f32> = colorTex;
+    let smp: sampler = texSampler;
+    let texCoord: vec2f = varyings.texCoord;
 
     let resolution = vec2<f32>(textureDimensions(tex));
     let invRes = 1.0 / resolution;

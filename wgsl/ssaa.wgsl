@@ -68,12 +68,12 @@ fn filterweightMitchell2D(t: vec2f) -> f32 {
 }
 
 
-fn aaShader(
-    tex: texture_2d<f32>,
-    smp: sampler,
-    texCoord: vec2<f32>,
-    scaleFactor: f32,
-) -> vec4<f32> {
+@fragment
+fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
+
+    let tex: texture_2d<f32> = colorTex;
+    let smp: sampler = texSampler;
+    let texCoord: vec2f = varyings.texCoord;
 
     // The size of the source texture
     let resolution = vec2<f32>(textureDimensions(tex).xy);

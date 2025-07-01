@@ -1,7 +1,7 @@
-# ppaa-research
+# ppaa-experiments
 Compare post-processing aa methods like FXAA
 
-[View!](https://almarklein.github.io/ppaa-research/viewer.html)
+[View!](https://almarklein.github.io/ppaa-experiments/viewer.html)
 
 ## Intro
 
@@ -26,7 +26,7 @@ scale-space theory (i.e. Gaussian kernels)? I call this Directional Diffusion An
 
 ## Viewer
 
-This repo contains an HTML file to compare different ppaa methods. You can see it online at https://almarklein.github.io/ppaa-research/viewer.html
+This repo contains an HTML file to compare different ppaa methods. You can see it online at https://almarklein.github.io/ppaa-experiments/viewer.html
 
 When you've checked out the repo, you can simply open the local html-file in your browser. This is a great tool if you want to e.g. tweak existing methods, add another method, or develop your own method.
 

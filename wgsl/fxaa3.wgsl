@@ -8,7 +8,7 @@
 //
 // Converted to wgsl in Bevy Engine: https://github.com/bevyengine/bevy/blob/main/crates/bevy_anti_aliasing/src/fxaa/fxaa.wgsl
 //
-// Adjusted for ppaa-research framework by Almar Klein (2025): https://github.com/almarklein/ppaa-research/blob/main/wgsl/fxaa311.wgsl
+// Adjusted for ppaa-experiments framework by Almar Klein (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/fxaa311.wgsl
 
 //@group(0) @binding(0) var screenTexture: texture_2d<f32>;
 //@group(0) @binding(1) var samp: sampler;
@@ -46,15 +46,13 @@ fn rgb2luma(rgb: vec3<f32>) -> f32 {
 }
 
 // Performs FXAA post-process anti-aliasing as described in the Nvidia FXAA white paper and the associated shader code.
-// @fragment
-// fn fragment(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
 
-fn aaShader(
-    screenTexture: texture_2d<f32>,
-    samp: sampler,
-    texCoord: vec2<f32>,
-    scaleFactor: f32,  // assumed to be 1
-) -> vec4<f32> {
+@fragment
+fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
+
+    let screenTexture: texture_2d<f32> = colorTex;
+    let samp: sampler = texSampler;
+    let texCoord: vec2f = varyings.texCoord;
 
     let resolution = vec2<f32>(textureDimensions(screenTexture));
     let inverseScreenSize = 1.0 / resolution.xy;

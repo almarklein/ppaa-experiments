@@ -39,21 +39,21 @@ class SSAAFullScreenRenderer(WgslFullscreenRenderer):
 # SSAA
 
 
-class Renderer_wgsl_ssaax2(SSAAFullScreenRenderer):
+class Renderer_ssaax2(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
         "scaleFactor": 2,
         "filter": "mitchell",
     }
 
 
-class Renderer_wgsl_ssaax4(SSAAFullScreenRenderer):
+class Renderer_ssaax4(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
         "scaleFactor": 4,
         "filter": "mitchell",
     }
 
 
-class Renderer_wgsl_ssaax8(SSAAFullScreenRenderer):
+class Renderer_ssaax8(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
         "scaleFactor": 8,
         "filter": "mitchell",
@@ -63,35 +63,35 @@ class Renderer_wgsl_ssaax8(SSAAFullScreenRenderer):
 # Upsampling
 
 
-class Renderer_wgsl_up_nearest(SSAAFullScreenRenderer):
+class Renderer_up_nearest(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
         "scaleFactor": 0.25,
         "filter": "nearest",
     }
 
 
-class Renderer_wgsl_up_triangle(SSAAFullScreenRenderer):
+class Renderer_up_triangle(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
         "scaleFactor": 0.25,
         "filter": "triangle",
     }
 
 
-class Renderer_wgsl_up_bspline(SSAAFullScreenRenderer):
+class Renderer_up_bspline(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
         "scaleFactor": 0.25,
         "filter": "bspline",
     }
 
 
-class Renderer_wgsl_up_mitchell(SSAAFullScreenRenderer):
+class Renderer_up_mitchell(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
         "scaleFactor": 0.25,
         "filter": "mitchell",
     }
 
 
-class Renderer_wgsl_up_catmull(SSAAFullScreenRenderer):
+class Renderer_up_catmull(SSAAFullScreenRenderer):
     TEMPLATE_VARS = {
         "scaleFactor": 0.25,
         "filter": "catmull",
@@ -101,15 +101,19 @@ class Renderer_wgsl_up_catmull(SSAAFullScreenRenderer):
 # PPAA filters
 
 
-class Renderer_wgsl_fxaa2(WgslFullscreenRenderer):
+class Renderer_dlaa(WgslFullscreenRenderer):
+    SHADER = "dlaa.wgsl"
+
+
+class Renderer_fxaa2(WgslFullscreenRenderer):
     SHADER = "fxaa2.wgsl"
 
 
-class Renderer_wgsl_fxaa3(WgslFullscreenRenderer):
+class Renderer_fxaa3(WgslFullscreenRenderer):
     SHADER = "fxaa3.wgsl"
 
 
-class Renderer_wgsl_ddaa2(WgslFullscreenRenderer):
+class Renderer_ddaa2(WgslFullscreenRenderer):
     SHADER = "ddaa2.wgsl"
 
 
@@ -160,20 +164,21 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 # Default no subset
 exp_renderers = None
 
-# exp_renderers = [Renderer_wgsl_fxaa311, Renderer_wgsl_ddaa2]
+# exp_renderers = [Renderer_fxaa311, Renderer_ddaa2]
 
 
 # ----------------------------  AA filtering
 
 for Renderer in [
-    # # SSAA
-    Renderer_wgsl_ssaax2,
-    Renderer_wgsl_ssaax4,
-    Renderer_wgsl_ssaax8,
-    # # FXAA
-    Renderer_wgsl_fxaa2,
-    Renderer_wgsl_fxaa3,
-    Renderer_wgsl_ddaa2,
+    # SSAA
+    Renderer_ssaax2,
+    Renderer_ssaax4,
+    Renderer_ssaax8,
+    # PPAA
+    Renderer_dlaa,
+    Renderer_fxaa2,
+    Renderer_fxaa3,
+    Renderer_ddaa2,
 ]:
     if exp_renderers and Renderer not in exp_renderers:
         continue
@@ -214,11 +219,11 @@ for Renderer in [
 # ---------------------------- Upsampling
 
 for Renderer in [
-    # Renderer_wgsl_up_nearest,
-    Renderer_wgsl_up_triangle,
-    Renderer_wgsl_up_bspline,
-    Renderer_wgsl_up_mitchell,
-    Renderer_wgsl_up_catmull,
+    # Renderer_up_nearest,
+    Renderer_up_triangle,
+    Renderer_up_bspline,
+    Renderer_up_mitchell,
+    Renderer_up_catmull,
 ]:
     if exp_renderers and Renderer not in exp_renderers:
         continue
