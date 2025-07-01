@@ -63,7 +63,7 @@ fn vsMmain(in: VertexInput) -> Varyings {
 
 AA_SHADER
 
-const theScaleFactor : f32 = SCALE_FACTOR;
+const theScaleFactor= f32({{ scaleFactor }});
 
 @fragment
 fn fsMain(varyings: Varyings) -> FragmentOutput {
@@ -76,24 +76,27 @@ fn fsMain(varyings: Varyings) -> FragmentOutput {
 
 class WgslFullscreenRenderer:
     SHADER = "noaa.wgsl"  # filename of the shader to invoke
-    SCALE_FACTOR = 1
 
-    def __init__(self):
+    TEMPLATE_VARS = {"scaleFactor": 1}
+
+    def __init__(self, **template_vars):
         self._shader = open(os.path.join(shader_dir, self.SHADER), "rb").read().decode()
 
         self._device = None
         self._pipeline = None
         self._bind_group = None
-        self._template_vars = {}
+        self._template_vars = template_vars
 
     def _format_wgsl(self, wgsl):
-        self._template_vars["scaleFactor"] = float(self.SCALE_FACTOR)
-        wgsl = wgsl.replace("SCALE_FACTOR", str(float(self.SCALE_FACTOR)))
-        return apply_templating(wgsl, **self._template_vars)
+        template_vars = {}
+        template_vars.update(self.TEMPLATE_VARS)
+        template_vars.update(self._template_vars)
+        return apply_templating(wgsl, **template_vars)
 
     def render(self, image, benchmark=None):
         assert image.ndim == 3 and image.shape[2] == 4, "Image must be rgba"
         h, w = image.shape[:2]
+        scale_factor = self.TEMPLATE_VARS["scaleFactor"]
 
         if self._device is None:
             adapter = wgpu.gpu.request_adapter_sync()
@@ -109,8 +112,8 @@ class WgslFullscreenRenderer:
             w, h, wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING
         )
         tex2 = self._create_texture(
-            int(w / self.SCALE_FACTOR),
-            int(h / self.SCALE_FACTOR),
+            int(w / scale_factor),
+            int(h / scale_factor),
             wgpu.TextureUsage.COPY_SRC | wgpu.TextureUsage.RENDER_ATTACHMENT,
         )
         sampler = device.create_sampler(

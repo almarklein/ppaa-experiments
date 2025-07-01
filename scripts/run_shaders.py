@@ -31,56 +31,71 @@ with open(os.path.join(all_images_dir, "README.md"), "bw") as f:
 
 # ---------------------------- Shaders classes
 
-# SSAA
-
 
 class SSAAFullScreenRenderer(WgslFullscreenRenderer):
     SHADER = "ssaa.wgsl"
-    FILTER = "Mitchell"
 
-    def _format_wgsl(self, wgsl):
-        self._template_vars["filter"] = self.FILTER.lower()
-        return super()._format_wgsl(wgsl)
+
+# SSAA
 
 
 class Renderer_wgsl_ssaax2(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 2
+    TEMPLATE_VARS = {
+        "scaleFactor": 2,
+        "filter": "mitchell",
+    }
 
 
 class Renderer_wgsl_ssaax4(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 4
+    TEMPLATE_VARS = {
+        "scaleFactor": 4,
+        "filter": "mitchell",
+    }
 
 
 class Renderer_wgsl_ssaax8(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 8
+    TEMPLATE_VARS = {
+        "scaleFactor": 8,
+        "filter": "mitchell",
+    }
 
 
 # Upsampling
 
 
 class Renderer_wgsl_up_nearest(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 0.25
-    FILTER = "nearest"
+    TEMPLATE_VARS = {
+        "scaleFactor": 0.25,
+        "filter": "nearest",
+    }
 
 
 class Renderer_wgsl_up_triangle(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 0.25
-    FILTER = "triangle"
+    TEMPLATE_VARS = {
+        "scaleFactor": 0.25,
+        "filter": "triangle",
+    }
 
 
 class Renderer_wgsl_up_bspline(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 0.25
-    FILTER = "bspline"
+    TEMPLATE_VARS = {
+        "scaleFactor": 0.25,
+        "filter": "bspline",
+    }
 
 
 class Renderer_wgsl_up_mitchell(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 0.25
-    FILTER = "mitchell"
+    TEMPLATE_VARS = {
+        "scaleFactor": 0.25,
+        "filter": "mitchell",
+    }
 
 
 class Renderer_wgsl_up_catmull(SSAAFullScreenRenderer):
-    SCALE_FACTOR = 0.25
-    FILTER = "catmull"
+    TEMPLATE_VARS = {
+        "scaleFactor": 0.25,
+        "filter": "catmull",
+    }
 
 
 # PPAA filters
@@ -90,8 +105,8 @@ class Renderer_wgsl_fxaa2(WgslFullscreenRenderer):
     SHADER = "fxaa2.wgsl"
 
 
-class Renderer_wgsl_fxaa311(WgslFullscreenRenderer):
-    SHADER = "fxaa311.wgsl"
+class Renderer_wgsl_fxaa3(WgslFullscreenRenderer):
+    SHADER = "fxaa3.wgsl"
 
 
 class Renderer_wgsl_ddaa2(WgslFullscreenRenderer):
@@ -145,7 +160,7 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 # Default no subset
 exp_renderers = None
 
-exp_renderers = [Renderer_wgsl_fxaa311, Renderer_wgsl_ddaa2]
+# exp_renderers = [Renderer_wgsl_fxaa311, Renderer_wgsl_ddaa2]
 
 
 # ----------------------------  AA filtering
@@ -157,7 +172,7 @@ for Renderer in [
     Renderer_wgsl_ssaax8,
     # # FXAA
     Renderer_wgsl_fxaa2,
-    Renderer_wgsl_fxaa311,
+    Renderer_wgsl_fxaa3,
     Renderer_wgsl_ddaa2,
 ]:
     if exp_renderers and Renderer not in exp_renderers:
@@ -165,8 +180,9 @@ for Renderer in [
     print(f"Rendering with {Renderer.__name__}")
     renderer = Renderer()
     hirez_flag = ""
-    if issubclass(Renderer, WgslFullscreenRenderer) and Renderer.SCALE_FACTOR > 1:
-        hirez_flag = "x" + str(Renderer.SCALE_FACTOR)
+    scale_factor = Renderer.TEMPLATE_VARS["scaleFactor"]
+    if issubclass(Renderer, WgslFullscreenRenderer) and scale_factor > 1:
+        hirez_flag = "x" + str(scale_factor).rstrip(".0")
     shadername = renderer.SHADER.split(".")[0] + hirez_flag
 
     for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
@@ -211,7 +227,7 @@ for Renderer in [
 
     for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
         name = fname.rpartition(".")[0]
-        shadername = f"up_{Renderer.FILTER}"
+        shadername = "up_" + Renderer.TEMPLATE_VARS["filter"]
 
         input_fname = os.path.join(all_images_dir, fname)
         output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")

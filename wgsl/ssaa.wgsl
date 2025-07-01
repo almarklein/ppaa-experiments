@@ -119,7 +119,7 @@ fn aaShader(
     // defines the cut-off frequency of the filter. But when we up-sample, we don't
     // need a filter, and we go in pure interpolation mode, and the filter must
     // match the resolution (== sample rate) of the source image, i.e. one.
-    let sigma = max({{scaleFactor}}, 1.0);
+    let sigma = max(f32({{scaleFactor}}), 1.0);
 
     // Prepare output
     var color = vec4<f32>(0.0, 0.0, 0.0, 0.0);
