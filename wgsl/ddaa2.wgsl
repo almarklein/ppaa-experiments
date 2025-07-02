@@ -36,14 +36,15 @@ const ITERATIONS: i32 = 12; //default is 12
 const SUBPIXEL_QUALITY: f32 = 0.75;
 // #define QUALITY(q) ((q) < 5 ? 1.0 : ((q) > 5 ? ((q) < 10 ? 2.0 : ((q) < 11 ? 4.0 : 8.0)) : 1.5))
 fn QUALITY(q: i32) -> f32 {
-    switch (q) {
-        //case 0, 1, 2, 3, 4: { return 1.0; }
-        default:              { return 1.0; }
-        case 5:               { return 1.5; }
-        case 6, 7, 8, 9:      { return 2.0; }
-        case 10:              { return 4.0; }
-        case 11:              { return 8.0; }
-    }
+    return 1.0;
+    // switch (q) {
+    //     //case 0, 1, 2, 3, 4: { return 1.0; }
+    //     default:              { return 1.0; }
+    //     case 5:               { return 1.5; }
+    //     case 6, 7, 8, 9:      { return 2.0; }
+    //     case 10:              { return 4.0; }
+    //     case 11:              { return 8.0; }
+    // }
 }
 
 // ========== Constants and helper functions ==========
@@ -75,73 +76,122 @@ fn get_subpixel_offset_for_long_edge(tex: texture_2d<f32>, samp: sampler, texCoo
         lumaLocalAverage = 0.5 * (luma2 + lumaCenter);
     }
 
-    // Shift UV in the correct direction by half a pixel.
-    // Compute offset (for each iteration step) in the right direction.
+    // Shift UV in the correct direction by half a pixel (orthogonal to the edge)
     var currentUv = texCoord;
-    var offset = vec2f(0.0, 0.0);
     if isHorizontal {
-        currentUv.y = currentUv.y + stepLength * 0.5;
-        offset.x = pixelStep.x;
+        currentUv.y += stepLength * 0.5;
     } else {
-        currentUv.x = currentUv.x + stepLength * 0.5;
-        offset.y = pixelStep.y;
+        currentUv.x += stepLength * 0.5;
     }
 
-    // Compute UVs to explore on each side of the edge, orthogonally. The QUALITY allows us to step faster.
-    var uv1 = currentUv - offset; // * QUALITY(0); // (quality 0 is 1.0)
-    var uv2 = currentUv + offset; // * QUALITY(0); // (quality 0 is 1.0)
+    // We'll sample values from the texture in groups of 4
+
+    var distance1 = 99.0;
+    var distance2 = 99.0;
+
+    var lumaEnd1: f32;
+    var lumaEnd1_1: f32;
+    var lumaEnd1_2: f32;
+    var lumaEnd1_3: f32;
+    var lumaEnd1_4: f32;
+
+    var lumaEnd2: f32;
+    var lumaEnd2_1: f32;
+    var lumaEnd2_2: f32;
+    var lumaEnd2_3: f32;
+    var lumaEnd2_4: f32;
 
     // Read the lumas at both current extremities of the exploration segment, and compute the delta wrt to the local average luma.
-    var lumaEnd1 = rgb2luma(textureSampleLevel(tex, samp, uv1, 0.0).rgb);
-    var lumaEnd2 = rgb2luma(textureSampleLevel(tex, samp, uv2, 0.0).rgb);
-    lumaEnd1 = lumaEnd1 - lumaLocalAverage;
-    lumaEnd2 = lumaEnd2 - lumaLocalAverage;
-
-    // If the luma deltas at the current extremities is larger than the local gradient, we have reached the side of the edge.
-    var reached1 = abs(lumaEnd1) >= gradientScaled;
-    var reached2 = abs(lumaEnd2) >= gradientScaled;
-    var reachedBoth = reached1 && reached2;
-
-    // If the side is not reached, we continue to explore in this direction.
-    uv1 = select(uv1 - offset, uv1, reached1); // * QUALITY(1); // (quality 1 is 1.0)
-    uv2 = select(uv2 - offset, uv2, reached2); // * QUALITY(1); // (quality 1 is 1.0)
-
-    // If both sides have not been reached, continue to explore.
-    if !reachedBoth {
-        for (var i: i32 = 2; i < ITERATIONS; i = i + 1) {
-            // If needed, read luma in 1st direction, compute delta.
-            if !reached1 {
-                lumaEnd1 = rgb2luma(textureSampleLevel(tex, samp, uv1, 0.0).rgb);
-                lumaEnd1 = lumaEnd1 - lumaLocalAverage;
-            }
-            // If needed, read luma in oposite direction, compute delta.
-            if !reached2 {
-                lumaEnd2 = rgb2luma(textureSampleLevel(tex, samp, uv2, 0.0).rgb);
-                lumaEnd2 = lumaEnd2 - lumaLocalAverage;
-            }
-            // If the luma deltas at the current extremities is larger than the local gradient, we have reached the side of the edge.
-            reached1 = abs(lumaEnd1) >= gradientScaled;
-            reached2 = abs(lumaEnd2) >= gradientScaled;
-            reachedBoth = reached1 && reached2;
-
-            // If the side is not reached, we continue to explore in this direction, with a variable quality.
-            if !reached1 {
-                uv1 = uv1 - offset * QUALITY(i);
-            }
-            if !reached2 {
-                uv2 = uv2 + offset * QUALITY(i);
-            }
-
-            // If both sides have been reached, stop the exploration.
-            if reachedBoth {
-                break;
-            }
-        }
+    if isHorizontal {
+        lumaEnd1_1 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(-1, 0)).rgb) - lumaLocalAverage;
+        lumaEnd1_2 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(-2, 0)).rgb) - lumaLocalAverage;
+        lumaEnd1_3 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(-3, 0)).rgb) - lumaLocalAverage;
+        lumaEnd1_4 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(-4, 0)).rgb) - lumaLocalAverage;
+        lumaEnd2_1 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i( 1, 0)).rgb) - lumaLocalAverage;
+        lumaEnd2_2 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i( 2, 0)).rgb) - lumaLocalAverage;
+        lumaEnd2_3 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i( 3, 0)).rgb) - lumaLocalAverage;
+        lumaEnd2_4 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i( 4, 0)).rgb) - lumaLocalAverage;
+    } else {
+        lumaEnd1_1 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, -1)).rgb) - lumaLocalAverage;
+        lumaEnd1_2 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, -2)).rgb) - lumaLocalAverage;
+        lumaEnd1_3 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, -3)).rgb) - lumaLocalAverage;
+        lumaEnd1_4 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, -4)).rgb) - lumaLocalAverage;
+        lumaEnd2_1 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0,  1)).rgb) - lumaLocalAverage;
+        lumaEnd2_2 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0,  2)).rgb) - lumaLocalAverage;
+        lumaEnd2_3 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0,  3)).rgb) - lumaLocalAverage;
+        lumaEnd2_4 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0,  4)).rgb) - lumaLocalAverage;
     }
 
-    // Compute the distances to each side edge of the edge segment
-    var distance1 = select(texCoord.y - uv1.y, texCoord.x - uv1.x, isHorizontal);
-    var distance2 = select(uv2.y - texCoord.y, uv2.x - texCoord.x, isHorizontal);
+    // The lumaEnd is at least that of the furthest pixel
+    lumaEnd1 = lumaEnd1_4;
+    lumaEnd2 = lumaEnd2_4;
+
+    // Search for left endpoint in the current 4 samples
+    if (abs(lumaEnd1_4) >= gradientScaled) { distance1 = 4.0; lumaEnd1 = lumaEnd1_4; }
+    if (abs(lumaEnd1_3) >= gradientScaled) { distance1 = 3.0; lumaEnd1 = lumaEnd1_3; }
+    if (abs(lumaEnd1_2) >= gradientScaled) { distance1 = 2.0; lumaEnd1 = lumaEnd1_2; }
+    if (abs(lumaEnd1_1) >= gradientScaled) { distance1 = 1.0; lumaEnd1 = lumaEnd1_1; }
+    // Same for the right endpoint
+    if (abs(lumaEnd2_4) >= gradientScaled) { distance2 = 4.0; lumaEnd2 = lumaEnd2_4; }
+    if (abs(lumaEnd2_3) >= gradientScaled) { distance2 = 3.0; lumaEnd2 = lumaEnd2_3; }
+    if (abs(lumaEnd2_2) >= gradientScaled) { distance2 = 2.0; lumaEnd2 = lumaEnd2_2; }
+    if (abs(lumaEnd2_1) >= gradientScaled) { distance2 = 1.0; lumaEnd2 = lumaEnd2_1; }
+
+    // Now search for endpoints in a series of rounds, using a templated (i.e. unrolled) loop.
+    // This is much faster (in WGSL) than a normal loop, probably due to optimization related to the texture lookups.
+    // I found it also helps performance to use the same uv coordinate and use the offset parameter.
+
+    $$ set stepSizes = [1, 1, 1]
+    $$ set max_iters = stepSizes | length
+    $$ set ns = namespace(stepSize=0, stepOffset=0)
+    var max_distance = 4.0;
+    var iter = 0;
+    $$ for iter in range(1, max_iters)
+        $$ set ns.stepSize = stepSizes[iter]
+        $$ set ns.stepOffset = ns.stepOffset + 4 * stepSizes[iter-1]
+        // Iteration {{ iter }}
+        max_distance = {{ 4.0 * ns.stepSize + ns.stepOffset }};
+        if (distance1 > 90.0) {
+            if isHorizontal {
+                lumaEnd1_1 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(-{{ 1 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
+                lumaEnd1_2 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(-{{ 2 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
+                lumaEnd1_3 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(-{{ 3 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
+                lumaEnd1_4 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(-{{ 4 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
+            } else {
+                lumaEnd1_1 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, -{{ 1 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
+                lumaEnd1_2 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, -{{ 2 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
+                lumaEnd1_3 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, -{{ 3 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
+                lumaEnd1_4 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, -{{ 4 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
+            }
+            lumaEnd1 = lumaEnd1_4;
+            if (abs(lumaEnd1_4) >= gradientScaled) { distance1 = {{ 4.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd1_4; }
+            if (abs(lumaEnd1_3) >= gradientScaled) { distance1 = {{ 3.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd1_3; }
+            if (abs(lumaEnd1_2) >= gradientScaled) { distance1 = {{ 2.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd1_2; }
+            if (abs(lumaEnd1_1) >= gradientScaled) { distance1 = {{ 1.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd1_1; }
+        }
+        if (distance2 > 90.0) {
+            if isHorizontal {
+                lumaEnd2_1 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i({{1 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
+                lumaEnd2_2 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i({{2 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
+                lumaEnd2_3 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i({{3 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
+                lumaEnd2_4 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i({{4 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
+            } else {
+                lumaEnd2_1 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, {{1 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
+                lumaEnd2_2 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, {{2 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
+                lumaEnd2_3 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, {{3 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
+                lumaEnd2_4 = rgb2luma(textureSampleLevel(tex, samp, currentUv, 0.0, vec2i(0, {{4 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
+            }
+            lumaEnd2 = lumaEnd2_4;
+            if (abs(lumaEnd2_4) >= gradientScaled) { distance2 = {{ 4.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd2_4; }
+            if (abs(lumaEnd2_3) >= gradientScaled) { distance2 = {{ 3.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd2_3; }
+            if (abs(lumaEnd2_2) >= gradientScaled) { distance2 = {{ 2.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd2_2; }
+            if (abs(lumaEnd2_1) >= gradientScaled) { distance2 = {{ 1.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd2_1; }
+        }
+    $$endfor
+
+    // Clip the distance
+    distance1 = min(distance1, max_distance);
+    distance2 = min(distance2, max_distance);
 
     // UV offset: read in the direction of the closest side of the edge.
     let pixelOffset = - min(distance1, distance2) / (distance1 + distance2) + 0.5;
@@ -235,16 +285,6 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     let isHorizontal = (edgeHorizontal >= edgeVertical);
     //let isHorizontal = (abs(diffuseDirection.x) >= abs(diffuseDirection.y)); -> different, resulting in wrong ridge detection
 
-    // Determine how steep the edge is, 0 means fully horizonal/vertical, 1 means diagonal
-    var steepness = 0.0;
-    if abs(diffuseDirection.x) > abs(diffuseDirection.y) {
-        steepness = abs(diffuseDirection.y / diffuseDirection.x);
-    } else {
-        steepness = abs(diffuseDirection.x / diffuseDirection.y);
-    }
-
-    steepness = min(steepness * 1.0, 1.0);
-
     // Calculate gradient on both sides of the current pixel
     var luma1 = select(lumaW, lumaS, isHorizontal);
     var luma2 = select(lumaE, lumaN, isHorizontal);    // Compute gradients in this direction.
@@ -253,52 +293,43 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
 
     // Maintain ridges and thin lines. This is inspired by AXAA's 2nd enhancement, except we also apply it to negative edges and do a smooth transition instead of a threshold.
     // Note that we can diminish quite hard, because the neighbouring pixels likely get diffused in the direction of the edge (this is one of our advantages over fxaa).
-    var edgeOffsetFactor = (1.0 - steepness) * min(1.0, f32(USE_EDGE_SEARCH));
     if sign(gradient1) == sign(gradient2) {
         // This is a ridge or a valley, e.g. a thin line. We want to presereve these.
         let ridgeness = min(abs(gradient1), abs(gradient2));
         let diminish_factor = 1.0 - (min(1.0, 10 * ridgeness));
-        edgeOffsetFactor *= diminish_factor;
         diffuseStrength *= diminish_factor;
-        // TODO: diminish edgeOffsetFactor faster
     }
 
     // For long edges, the diffusion has to be huge to remove the jaggies. What algorithms like FXAA do instead, is detect
     // the length of the edge segment (successive horizontal/vertical pixels), and the use that to calculate the subpixel
     // texture coordinate offset, perpendicular to the edge. So technically this is diffusion perpendicular to the edge,
     // but in a controlled manner to smooth the step/jaggy.
-    var subpixelEdgeOffset = vec2f(0.0);
-    if true {//(diffuseStrength >= 0.0) {
-        subpixelEdgeOffset = get_subpixel_offset_for_long_edge(tex, smp, texCoord, pixelStep, isHorizontal, lumaCenter, luma1, luma2);
-    }
+    let subpixelEdgeOffset = get_subpixel_offset_for_long_edge(tex, smp, texCoord, pixelStep, isHorizontal, lumaCenter, luma1, luma2);
+
+    // We mix the effects of the edge-search with the directional diffusion.
+    // Basically, we allow more diffusion if the edge-effect is smaller.
+    let edgeStrength = (min(1.0, length(2.0 * subpixelEdgeOffset / pixelStep)));
+    diffuseStrength = diffuseStrength * (1.0 - edgeStrength);
 
     // The step to take for the diffusion effect (blur in the direction of the
     // edge). Note that for diagonal-ish lines, the most blur is obtained when
-    // stepping halfway to the next pixel, i.e. 0.707, because then the
-    // neighbour pixels are taken into account more. Let's use no more than 0.6
-    // because then for horizontal lines, the max diffusion kernel is
-    // effectively [0.6, 2 * 0.5, 0.6] which is still somewhat bell-shaped.
-    // Actually, if we use 0.5, we trade a bit more smoothness for perceived sharpness.
-    // Make its 0.51 so it does not look like some sort of offset.
+    // stepping halfway to the next pixel, i.e. 0.707, because then the neighbour
+    // pixels are taken into account more. Let's use no more than 0.6 because then
+    // for horizontal lines, the max diffusion kernel is effectively [0.6, 2 * 0.5,
+    // 0.6] which is still somewhat bell-shaped. Actually, if we use 0.5, we trade a
+    // bit more smoothness for perceived sharpness. Make its 0.51 so it does not
+    // look like some sort of offset.
     let max_step_size = 0.51;
     let diffuseStep = diffuseDirection * pixelStep * (max_step_size * diffuseStrength);
 
     // Compose the three texture coordinates, combining the ede-offset with the diffusion componennt, depending on the steepness of the edge.
-    let texCoord0 = texCoord + subpixelEdgeOffset;
-    let texCoord1 = texCoord - diffuseStep;
-    let texCoord2 = texCoord + diffuseStep;
-
-    // We mix the effects of the edge-search (FXAA 311 method) with the directional diffusion.
-    // The factor below determines their ratio. We base it off the subpixelEdgeOffset,
-    // which goes towards 0.5 for horizontal/vertical edges, and towards 0 for diagonal edges.
-    // The multiplier (2.0) is actually relatively invariant for the end result.
-    let diffuseVsEdge = sqrt(min(1.0, length(2.0 * subpixelEdgeOffset / pixelStep)));
+    let texCoord1 = texCoord - diffuseStep + subpixelEdgeOffset;
+    let texCoord2 = texCoord + diffuseStep + subpixelEdgeOffset;
 
     // Sample the final color
     var finalColor = vec3f(0.0);
-    finalColor += diffuseVsEdge * textureSampleLevel(tex, smp, texCoord0, 0.0).rgb;
-    finalColor += (1.0 - diffuseVsEdge) * 0.5 * textureSampleLevel(tex, smp, texCoord1, 0.0).rgb;
-    finalColor += (1.0 - diffuseVsEdge) * 0.5 * textureSampleLevel(tex, smp, texCoord2, 0.0).rgb;
+    finalColor += 0.5 * textureSampleLevel(tex, smp, texCoord1, 0.0).rgb;
+    finalColor += 0.5 * textureSampleLevel(tex, smp, texCoord2, 0.0).rgb;
 
     return vec4f(finalColor, centerSample.a);
 }
