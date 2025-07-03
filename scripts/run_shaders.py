@@ -171,7 +171,7 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 # Default no subset
 exp_renderers = None
 
-exp_renderers = [Renderer_fxaa3, Renderer_ddaa1, Renderer_ddaa2]
+# exp_renderers = [Renderer_ddaa2]
 
 
 # ----------------------------  AA filtering

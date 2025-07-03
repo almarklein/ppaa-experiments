@@ -7,10 +7,28 @@
 //
 // This is the predecessor to ddaa2. It is included for comparison, and because its simpler and faster than ddaa2.
 
-// ========== DDAA CONFIG ==========
 
-// The strength of the diffusion.
-const DDAA_STRENGTH = 3.0;
+// ========== CONFIG ==========
+
+// The strength of the diffusion. A value of 3 seems to work well.
+$$ if DDAA_STRENGTH is not defined
+$$ set DDAA_STRENGTH = 3.0
+$$ endif
+const DDAA_STRENGTH : f32 = {{ DDAA_STRENGTH }};
+
+// Trims the algorithm from processing darks.
+// low: 0.0833, medium: 0.0625, high: 0.0312, ultra: 0.0156, extreme: 0.0078
+$$ if EDGE_THRESHOLD_MIN is not defined
+$$ set EDGE_THRESHOLD_MIN = 0.0625
+$$ endif
+const EDGE_THRESHOLD_MIN : f32 = {{ EDGE_THRESHOLD_MIN }};
+
+// The minimum amount of local contrast required to apply algorithm.
+// low: 0.250, medium: 0.166, high: 0.0.125, ultra: 0.063, extreme: 0.031
+$$ if EDGE_THRESHOLD_MAX is not defined
+$$ set EDGE_THRESHOLD_MAX = 0.166
+$$ endif
+const EDGE_THRESHOLD_MAX : f32 = {{ EDGE_THRESHOLD_MAX }};
 
 
 // ========== Constants and helper functions ==========
@@ -55,9 +73,9 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     let lumaRange = lumaMax - lumaMin;
 
     // If the luma variation is lower that a threshold (or if we are in a really dark area), we are not on an edge, don't perform any AA.
-    // if lumaRange < max(EDGE_THRESHOLD_MIN, lumaMax * EDGE_THRESHOLD_MAX) {
-    //     return centerSample;
-    // }
+    if lumaRange < max(EDGE_THRESHOLD_MIN, lumaMax * EDGE_THRESHOLD_MAX) {
+        return centerSample;
+    }
 
     // Combine the four edges lumas (using intermediary variables for future computations with the same values).
     let lumaSUp = lumaS + lumaN;
