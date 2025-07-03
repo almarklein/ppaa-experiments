@@ -1,6 +1,6 @@
 // ddaa2.wgsl version 2.1
 //
-// Directional Diffusion Anti Aliasinng (DDAA) version 2: smooth along the edges based on Scharr kernel, and perform edge-search to better support horizontal/vertical edges.
+// Directional Diffusion Anti Aliasing (DDAA) version 2: smooth along the edges based on Scharr kernel, and perform edge-search to better support horizontal/vertical edges.
 //
 // v0: original (2013): https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
 // v1: ported to wgsl and tweaked (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
@@ -8,12 +8,22 @@
 
 // ========== DDAA CONFIG ==========
 
-// The strength of the diffusion.
-const DDAA_STRENGTH = 3.0;
+{# The number of iterations to walk along the edge. #}
+{# Setting this to zero disables the edge search, effectively ddaa1. #}
+{# The first iter takes 8 samples, 4 in each direction. #}
+{# Each next iters takes 8 samples in the direction for which the end has not yet been found. #}
+{# A value of 2 is probably good enough, and is quite performant. #}
+{# A value of 3 is nice, but beyond that it does not do much. #}
+$$ if MAX_EDGE_ITERS is not defined
+$$ set MAX_EDGE_ITERS = 2
+$$ endif
+const MAX_EDGE_ITERS : i32 = {{ MAX_EDGE_ITERS }};
 
-// If false, use only diffusion which is much lighter, and the speed independent on the image content.
-// If true, the smoothing of near-horizontal and near-vertical edges is much better.
-const USE_EDGE_SEARCH = true;
+{# The strength of the diffusion. A value of 3 seems to work well. #}
+$$ if DDAA_STRENGTH is not defined
+$$ set DDAA_STRENGTH = 3.0
+$$ endif
+const DDAA_STRENGTH : f32 = {{ DDAA_STRENGTH }};
 
 
 // ========== FXAA CONFIG ==========
@@ -32,20 +42,6 @@ const EDGE_THRESHOLD_MAX: f32 = 0.166;  // medium
 // const EDGE_THRESHOLD_MAX: f32 = 0.063;  // ultra
 // const EDGE_THRESHOLD_MAX: f32 = 0.031;  // extreme
 
-const ITERATIONS: i32 = 12; //default is 12
-const SUBPIXEL_QUALITY: f32 = 0.75;
-// #define QUALITY(q) ((q) < 5 ? 1.0 : ((q) > 5 ? ((q) < 10 ? 2.0 : ((q) < 11 ? 4.0 : 8.0)) : 1.5))
-fn QUALITY(q: i32) -> f32 {
-    return 1.0;
-    // switch (q) {
-    //     //case 0, 1, 2, 3, 4: { return 1.0; }
-    //     default:              { return 1.0; }
-    //     case 5:               { return 1.5; }
-    //     case 6, 7, 8, 9:      { return 2.0; }
-    //     case 10:              { return 4.0; }
-    //     case 11:              { return 8.0; }
-    // }
-}
 
 // ========== Constants and helper functions ==========
 
@@ -145,7 +141,7 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     // texture coordinate offset, perpendicular to the edge. So technically this is diffusion perpendicular to the edge,
     // but in a controlled manner to smooth the step/jaggy.
     var subpixelEdgeOffset = vec2f(0.0);
-    if (USE_EDGE_SEARCH) {
+    if (MAX_EDGE_ITERS > 0) {
 
         // Choose the step size (one pixel) accordingly.
         var stepLength = select(pixelStep.x, pixelStep.y, isHorizontal);
@@ -227,74 +223,75 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
         // This is much faster (in WGSL) than a normal loop, probably due to optimization related to the texture lookups.
         // I found it also helps performance to use the same uv coordinate and use the offset parameter.
 
-        $$ set stepSizes = [1, 1]
-        $$ set max_iters = stepSizes | length
-        $$ set ns = namespace(stepSize=0, stepOffset=0)
+        $$ set ns = namespace(stepOffset=0)
         var max_distance = 4.0;
-        $$ for iter in range(1, max_iters)
-            $$ set ns.stepSize = stepSizes[iter]
+        $$ for iter in range(1, MAX_EDGE_ITERS)
             $$ set ns.stepOffset = 4 + (iter - 1) * 8
             // Iteration {{ iter }}
-            max_distance = {{ 8.0 * ns.stepSize + ns.stepOffset }};
+            max_distance = {{ 8.0 + ns.stepOffset }};
             if (distance1 > 90.0) {
                 if isHorizontal {
-                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-{{ 1 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-{{ 2 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-{{ 3 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-{{ 4 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-{{ 5 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-{{ 6 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-{{ 7 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-{{ 8 * ns.stepSize + ns.stepOffset }}, 0)).rgb) - lumaLocalAverage;
+                    let currentUv1 = currentUv + vec2f(-{{ ns.stepOffset + 1}}, 0.0) * pixelStep;
+                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i( 0, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(-1, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(-2, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(-3, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(-4, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(-5, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(-6, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(-7, 0)).rgb) - lumaLocalAverage;
                 } else {
-                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, -{{ 1 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
-                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, -{{ 2 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
-                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, -{{ 3 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
-                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, -{{ 4 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
-                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, -{{ 5 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
-                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, -{{ 6 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
-                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, -{{ 7 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
-                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, -{{ 8 * ns.stepSize + ns.stepOffset }})).rgb) - lumaLocalAverage;
+                    let currentUv1 = currentUv + vec2f(0.0, -{{ ns.stepOffset + 1 }}) * pixelStep;
+                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, -1)).rgb) - lumaLocalAverage;
+                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, -2)).rgb) - lumaLocalAverage;
+                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, -3)).rgb) - lumaLocalAverage;
+                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, -4)).rgb) - lumaLocalAverage;
+                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, -5)).rgb) - lumaLocalAverage;
+                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, -6)).rgb) - lumaLocalAverage;
+                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, -7)).rgb) - lumaLocalAverage;
                 }
                 lumaEnd1 = lumaEnd_8;
-                if (abs(lumaEnd_8) >= gradientScaled) { distance1 = {{ 8.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd_8; }
-                if (abs(lumaEnd_7) >= gradientScaled) { distance1 = {{ 7.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd_7; }
-                if (abs(lumaEnd_6) >= gradientScaled) { distance1 = {{ 6.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd_6; }
-                if (abs(lumaEnd_5) >= gradientScaled) { distance1 = {{ 5.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd_5; }
-                if (abs(lumaEnd_4) >= gradientScaled) { distance1 = {{ 4.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd_4; }
-                if (abs(lumaEnd_3) >= gradientScaled) { distance1 = {{ 3.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd_3; }
-                if (abs(lumaEnd_2) >= gradientScaled) { distance1 = {{ 2.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd_2; }
-                if (abs(lumaEnd_1) >= gradientScaled) { distance1 = {{ 1.0 * ns.stepSize + ns.stepOffset }}; lumaEnd1 = lumaEnd_1; }
+                if (abs(lumaEnd_8) >= gradientScaled) { distance1 = {{ 8.0 + ns.stepOffset }}; lumaEnd1 = lumaEnd_8; }
+                if (abs(lumaEnd_7) >= gradientScaled) { distance1 = {{ 7.0 + ns.stepOffset }}; lumaEnd1 = lumaEnd_7; }
+                if (abs(lumaEnd_6) >= gradientScaled) { distance1 = {{ 6.0 + ns.stepOffset }}; lumaEnd1 = lumaEnd_6; }
+                if (abs(lumaEnd_5) >= gradientScaled) { distance1 = {{ 5.0 + ns.stepOffset }}; lumaEnd1 = lumaEnd_5; }
+                if (abs(lumaEnd_4) >= gradientScaled) { distance1 = {{ 4.0 + ns.stepOffset }}; lumaEnd1 = lumaEnd_4; }
+                if (abs(lumaEnd_3) >= gradientScaled) { distance1 = {{ 3.0 + ns.stepOffset }}; lumaEnd1 = lumaEnd_3; }
+                if (abs(lumaEnd_2) >= gradientScaled) { distance1 = {{ 2.0 + ns.stepOffset }}; lumaEnd1 = lumaEnd_2; }
+                if (abs(lumaEnd_1) >= gradientScaled) { distance1 = {{ 1.0 + ns.stepOffset }}; lumaEnd1 = lumaEnd_1; }
             }
             if (distance2 > 90.0) {
                 if isHorizontal {
-                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{1 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{2 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{3 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{4 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{5 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{6 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{7 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{8 * ns.stepSize + ns.stepOffset}}, 0)).rgb) - lumaLocalAverage;
+                    let currentUv2 = currentUv + vec2f({{ ns.stepOffset + 1}}, 0.0) * pixelStep;
+                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(1, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(2, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(3, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(4, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(5, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(6, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(7, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(8, 0)).rgb) - lumaLocalAverage;
                 } else {
-                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{1 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
-                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{2 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
-                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{3 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
-                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{4 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
-                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{5 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
-                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{6 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
-                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{7 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
-                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{8 * ns.stepSize + ns.stepOffset}})).rgb) - lumaLocalAverage;
+                    let currentUv2 = currentUv + vec2f(0.0, {{ ns.stepOffset + 1 }}) * pixelStep;
+                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 1)).rgb) - lumaLocalAverage;
+                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 2)).rgb) - lumaLocalAverage;
+                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 3)).rgb) - lumaLocalAverage;
+                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 4)).rgb) - lumaLocalAverage;
+                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 5)).rgb) - lumaLocalAverage;
+                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 6)).rgb) - lumaLocalAverage;
+                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 7)).rgb) - lumaLocalAverage;
+                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 8)).rgb) - lumaLocalAverage;
                 }
                 lumaEnd2 = lumaEnd_8;
-                if (abs(lumaEnd_8) >= gradientScaled) { distance2 = {{ 8.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd_8; }
-                if (abs(lumaEnd_7) >= gradientScaled) { distance2 = {{ 7.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd_7; }
-                if (abs(lumaEnd_6) >= gradientScaled) { distance2 = {{ 6.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd_6; }
-                if (abs(lumaEnd_5) >= gradientScaled) { distance2 = {{ 5.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd_5; }
-                if (abs(lumaEnd_4) >= gradientScaled) { distance2 = {{ 4.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd_4; }
-                if (abs(lumaEnd_3) >= gradientScaled) { distance2 = {{ 3.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd_3; }
-                if (abs(lumaEnd_2) >= gradientScaled) { distance2 = {{ 2.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd_2; }
-                if (abs(lumaEnd_1) >= gradientScaled) { distance2 = {{ 1.0 * ns.stepSize + ns.stepOffset }}; lumaEnd2 = lumaEnd_1; }
+                if (abs(lumaEnd_8) >= gradientScaled) { distance2 = {{ 8.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_8; }
+                if (abs(lumaEnd_7) >= gradientScaled) { distance2 = {{ 7.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_7; }
+                if (abs(lumaEnd_6) >= gradientScaled) { distance2 = {{ 6.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_6; }
+                if (abs(lumaEnd_5) >= gradientScaled) { distance2 = {{ 5.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_5; }
+                if (abs(lumaEnd_4) >= gradientScaled) { distance2 = {{ 4.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_4; }
+                if (abs(lumaEnd_3) >= gradientScaled) { distance2 = {{ 3.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_3; }
+                if (abs(lumaEnd_2) >= gradientScaled) { distance2 = {{ 2.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_2; }
+                if (abs(lumaEnd_1) >= gradientScaled) { distance2 = {{ 1.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_1; }
             }
         $$endfor
 
@@ -323,7 +320,7 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
             subpixelEdgeOffset = vec2f(pixelOffset * stepLength, 0.0);
         }
 
-        // DEBUG
+        // For debugging
         // subpixelEdgeOffset = vec2f(distance1, distance2);
     }
 
@@ -352,9 +349,10 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     finalColor += 0.5 * textureSampleLevel(tex, smp, texCoord1, 0.0).rgb;
     finalColor += 0.5 * textureSampleLevel(tex, smp, texCoord2, 0.0).rgb;
 
+    // For debugging
     // if (subpixelEdgeOffset.x == 0.0 && subpixelEdgeOffset.y == 0.0) {
     //     finalColor = vec3f(0.0, 0.0, 0.0);
-    // } else if (subpixelEdgeOffset.x <= 5.0 && subpixelEdgeOffset.y <= 5.0) {
+    // } else if (subpixelEdgeOffset.x <= 12.0 && subpixelEdgeOffset.y <= 12.0) {
     //     finalColor = vec3f(0.0, 0.0, 1.0);
     // } else {
     //     finalColor = vec3f(1.0, 0.0, 0.0);
