@@ -206,6 +206,9 @@ class WgslFullscreenRenderer:
         wgsl = SHADER_TEMPLATE + self._shader
         wgsl = self._format_wgsl(wgsl)
 
+        with open(os.path.join(shader_dir, "tmp.wgsl"), "wb") as f:
+            f.write(wgsl.encode())
+
         shader_module = device.create_shader_module(code=wgsl)
 
         pipeline_layout = device.create_pipeline_layout(
