@@ -207,6 +207,8 @@ for Renderer in [
         if hirez_flag and not os.path.isfile(input_fname):
             continue
 
+        print(f"    Generating {name} (in {output_fname})")
+
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
         assert im1.dtype == np.uint8
@@ -215,13 +217,12 @@ for Renderer in [
         im2 = renderer.render(im1)
 
         if exp_renderers:
-            renderer.render(im1)
-            print(f"    {renderer.last_time * 1000:0.03f} ms")
-            renderer.render(im1)
-            print(f"    {renderer.last_time * 1000:0.03f} ms")
+            renderer.render(im1, benchmark=True)
+            print(f"    {renderer.last_time * 1000000:0.0f} us")
+            renderer.render(im1, benchmark=True)
+            print(f"    {renderer.last_time * 1000000:0.0f} us")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
-        print(f"    Generated {output_fname}")
 
 
 # ---------------------------- Upsampling
@@ -245,6 +246,8 @@ for Renderer in [
         input_fname = os.path.join(all_images_dir, fname)
         output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")
 
+        print(f"    Generating {name} (in {output_fname})")
+
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
         assert im1.dtype == np.uint8
@@ -253,12 +256,11 @@ for Renderer in [
         im2 = renderer.render(im1)
 
         if exp_renderers:
-            renderer.render(im1)
-            print(f"    {renderer.last_time * 1000:0.03f} ms")
-            renderer.render(im1)
-            print(f"    {renderer.last_time * 1000:0.03f} ms")
+            renderer.render(im1, benchmark=True)
+            print(f"    {renderer.last_time * 1000000:0.0f} us")
+            renderer.render(im1, benchmark=True)
+            print(f"    {renderer.last_time * 1000000:0.0f} us")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
-        print(f"    Generated {output_fname}")
 
 print("Done!")

@@ -131,21 +131,27 @@ class WgslFullscreenRenderer:
         # Upload
         self._write_texture(tex1, image)
 
+        niters = 1
+        if benchmark:
+            niters = 1000
+            device._poll_wait()
+            time.sleep(0.1)
+            device._poll_wait()
+
         # Render!
         t0 = time.perf_counter()
         command_encoder = self._device.create_command_encoder()
-        render_pass = command_encoder.begin_render_pass(
-            color_attachments=[attachment],
-            depth_stencil_attachment=None,
-        )
-        render_pass.set_pipeline(self._pipeline)
-        render_pass.set_bind_group(0, bind_group, [], 0, 99)
-        niters = 100 if benchmark else 1
         for i in range(niters):
+            render_pass = command_encoder.begin_render_pass(
+                color_attachments=[attachment],
+                depth_stencil_attachment=None,
+            )
+            render_pass.set_pipeline(self._pipeline)
+            render_pass.set_bind_group(0, bind_group, [], 0, 99)
             render_pass.draw(4, 1)
-        render_pass.end()
-        device.queue.submit([command_encoder.finish()])
+            render_pass.end()
 
+        device.queue.submit([command_encoder.finish()])
         device._poll_wait()  # wait
         t1 = time.perf_counter()
         self.last_time = (t1 - t0) / niters
