@@ -260,25 +260,25 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
             }
             if (distance2 > 90.0) {
                 if isHorizontal {
-                    let currentUv2 = currentUv + vec2f({{ ns.stepOffset + 1}}, 0.0) * pixelStep;
-                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(1, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(2, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(3, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(4, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(5, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(6, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(7, 0)).rgb) - lumaLocalAverage;
-                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(8, 0)).rgb) - lumaLocalAverage;
+                    let currentUv2 = currentUv + vec2f({{ ns.stepOffset + 1 + 1 }}, 0.0) * pixelStep;
+                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(1, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(2, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(3, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(4, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(5, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(6, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(7, 0)).rgb) - lumaLocalAverage;
                 } else {
-                    let currentUv2 = currentUv + vec2f(0.0, {{ ns.stepOffset + 1 }}) * pixelStep;
-                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 1)).rgb) - lumaLocalAverage;
-                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 2)).rgb) - lumaLocalAverage;
-                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 3)).rgb) - lumaLocalAverage;
-                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 4)).rgb) - lumaLocalAverage;
-                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 5)).rgb) - lumaLocalAverage;
-                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 6)).rgb) - lumaLocalAverage;
-                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 7)).rgb) - lumaLocalAverage;
-                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 8)).rgb) - lumaLocalAverage;
+                    let currentUv2 = currentUv + vec2f(0.0, {{ ns.stepOffset + 1 + 1 }}) * pixelStep;
+                    lumaEnd_1 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_2 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 1)).rgb) - lumaLocalAverage;
+                    lumaEnd_3 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 2)).rgb) - lumaLocalAverage;
+                    lumaEnd_4 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 3)).rgb) - lumaLocalAverage;
+                    lumaEnd_5 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 4)).rgb) - lumaLocalAverage;
+                    lumaEnd_6 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 5)).rgb) - lumaLocalAverage;
+                    lumaEnd_7 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 6)).rgb) - lumaLocalAverage;
+                    lumaEnd_8 = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, 7)).rgb) - lumaLocalAverage;
                 }
                 lumaEnd2 = lumaEnd_8;
                 if (abs(lumaEnd_8) >= gradientScaled) { distance2 = {{ 8.0 + ns.stepOffset }}; lumaEnd2 = lumaEnd_8; }
