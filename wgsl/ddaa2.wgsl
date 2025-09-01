@@ -1,10 +1,11 @@
-// ddaa2.wgsl version 2.1
+// ddaa2.wgsl version 2.2
 //
 // Directional Diffusion Anti Aliasing (DDAA) version 2: smooth along the edges based on Scharr kernel, and perform edge-search to better support horizontal/vertical edges.
 //
-// v0: original (2013): https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
-// v1: ported to wgsl and tweaked (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
-// v2: added edge search (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl
+// v0 (2013): original: https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
+// v1 (2025): ported to wgsl and tweaked: https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
+// v2.1 (2025): added edge search (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl
+// v2.2 (2025): made SAMPLES_PER_STEP configurable, and fixed a little sampling bug causing an asymetry.
 
 // ========== CONFIG ==========
 
@@ -14,20 +15,21 @@
 // performed in parallel, to a certain degree. The SAMPLES_PER_STEP should be an even number
 // and no larger than 14, because the int pixel offset in textureSampleLevel should be [-8..7]
 // and the hardware does not do the right thing for larger values, and may or may not issue a warning.
+// Some benchmarking on a few different systems shows that 4 is a good number.
 $$ if SAMPLES_PER_STEP is not defined
-$$ set SAMPLES_PER_STEP = 8
+$$ set SAMPLES_PER_STEP = 4
 $$ set SAMPLES_PER_STEP = [SAMPLES_PER_STEP, 14] | min
 $$ endif
 const SAMPLES_PER_STEP : i32 = {{ SAMPLES_PER_STEP }};
 
 // The number of iterations to walk along the edge.
 // Setting this to zero disables the edge search, effectively ddaa1.
-// The first iter takes 8 samples, 4 in each direction.
-// Each next iters takes 8 samples in the direction for which the end has not yet been found.
-// A value of 2 is probably good enough, and is quite performant.
-// A value of 3 is nice, but beyond that it does not do much.
+// The first iter takes SAMPLES_PER_STEP / 2 samples in each direction.
+// Each next iters takes SAMPLES_PER_STEP samples in the direction for which the end has not yet been found.
+// So the "reach" of the algorithm is (SAMPLES_PER_STEP - 0.5) * MAX_EDGE_ITERS,
+// and you want to set it to go to about 10-20 pixels.
 $$ if MAX_EDGE_ITERS is not defined
-$$ set MAX_EDGE_ITERS = 2
+$$ set MAX_EDGE_ITERS = 4
 $$ endif
 const MAX_EDGE_ITERS : i32 = {{ MAX_EDGE_ITERS }};
 
