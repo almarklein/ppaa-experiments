@@ -260,9 +260,9 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
             }
         $$endfor
 
-        // Clip the distance
-        distance1 = min(distance1, max_distance);
-        distance2 = min(distance2, max_distance);
+        // Clip the distance (if we did not find the end, we assume it's one pixel further)
+        distance1 = min(distance1, max_distance + 1.0);
+        distance2 = min(distance2, max_distance + 1.0);
 
         // UV offset: read in the direction of the closest side of the edge.
         let pixelOffset = - min(distance1, distance2) / (distance1 + distance2) + 0.5;
