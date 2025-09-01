@@ -9,8 +9,14 @@
 // ========== CONFIG ==========
 
 
+// The number of samples per step, i.e. per batch of samples.
+// Combining samples in a batch helps performance because the texture queries can be
+// performed in parallel, to a certain degree. The SAMPLES_PER_STEP should be an even number
+// and no larger than 14, because the int pixel offset in textureSampleLevel should be [-8..7]
+// and the hardware does not do the right thing for larger values, and may or may not issue a warning.
 $$ if SAMPLES_PER_STEP is not defined
 $$ set SAMPLES_PER_STEP = 8
+$$ set SAMPLES_PER_STEP = [SAMPLES_PER_STEP, 14] | min
 $$ endif
 const SAMPLES_PER_STEP : i32 = {{ SAMPLES_PER_STEP }};
 
@@ -185,14 +191,14 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
         // Read the lumas at both current extremities of the exploration segment, and compute the delta wrt to the local average luma.
         if isHorizontal {
             $$ for si in range(0, SAMPLES_PER_STEP//2)
-            lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{0 - si -1 }}, 0)).rgb) - lumaLocalAverage;
+            lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, -vec2i({{ si + 1 }}, 0)).rgb) - lumaLocalAverage;
             $$ endfor
             $$ for si in range(SAMPLES_PER_STEP//2, SAMPLES_PER_STEP)
             lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{ si - SAMPLES_PER_STEP//2 + 1 }}, 0)).rgb) - lumaLocalAverage;
             $$ endfor
         } else {
             $$ for si in range(0, SAMPLES_PER_STEP//2)
-            lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{ 0 - si - 1 }})).rgb) - lumaLocalAverage;
+            lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, -vec2i(0, {{ si + 1 }})).rgb) - lumaLocalAverage;
             $$ endfor
             $$ for si in range(SAMPLES_PER_STEP//2, SAMPLES_PER_STEP)
             lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{ si - SAMPLES_PER_STEP//2 + 1 }})).rgb) - lumaLocalAverage;
@@ -226,14 +232,14 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
             max_distance = {{ SAMPLES_PER_STEP + ns.stepOffset }}.0;
             if (distance1 > 900.0) {
                 if isHorizontal {
-                    let currentUv1 = currentUv - vec2f({{ ns.stepOffset + 1}}, 0.0) * pixelStep;
+                    let currentUv1 = currentUv - vec2f({{ ns.stepOffset + SAMPLES_PER_STEP//2 + 1 }}.0, 0.0) * pixelStep;
                     $$ for si in range(SAMPLES_PER_STEP)
-                    lumaEnd_{{si}} = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i( {{0-si}}, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_{{si}} = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, -vec2i( {{si-SAMPLES_PER_STEP//2}}, 0)).rgb) - lumaLocalAverage;
                     $$ endfor
                 } else {
-                    let currentUv1 = currentUv - vec2f(0.0, {{ ns.stepOffset + 1 }}) * pixelStep;
+                    let currentUv1 = currentUv - vec2f(0.0, {{ ns.stepOffset + SAMPLES_PER_STEP//2 +1 }}.0) * pixelStep;
                     $$ for si in range(SAMPLES_PER_STEP)
-                    lumaEnd_{{si}} = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, vec2i(0, {{0-si}} )).rgb) - lumaLocalAverage;
+                    lumaEnd_{{si}} = rgb2luma(textureSampleLevel(tex, smp, currentUv1, 0.0, -vec2i(0, {{si-SAMPLES_PER_STEP//2}} )).rgb) - lumaLocalAverage;
                     $$ endfor
                 }
                 lumaEnd1 = lumaEnd_{{SAMPLES_PER_STEP-1}};
@@ -243,14 +249,14 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
             }
             if (distance2 > 900.0) {
                 if isHorizontal {
-                    let currentUv2 = currentUv + vec2f({{ ns.stepOffset + 1 }}, 0.0) * pixelStep;
+                    let currentUv2 = currentUv + vec2f({{ ns.stepOffset + SAMPLES_PER_STEP//2 + 1}}.0, 0.0) * pixelStep;
                     $$ for si in range(SAMPLES_PER_STEP)
-                    lumaEnd_{{si}} = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i( {{si}}, 0)).rgb) - lumaLocalAverage;
+                    lumaEnd_{{si}} = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i( {{si-SAMPLES_PER_STEP//2}}, 0)).rgb) - lumaLocalAverage;
                     $$ endfor
                 } else {
-                    let currentUv2 = currentUv + vec2f(0.0, {{ ns.stepOffset + 1 }}) * pixelStep;
+                    let currentUv2 = currentUv + vec2f(0.0, {{ ns.stepOffset + SAMPLES_PER_STEP//2 + 1 }}.0) * pixelStep;
                     $$ for si in range(SAMPLES_PER_STEP)
-                    lumaEnd_{{si}} = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, {{si}} )).rgb) - lumaLocalAverage;
+                    lumaEnd_{{si}} = rgb2luma(textureSampleLevel(tex, smp, currentUv2, 0.0, vec2i(0, {{si-SAMPLES_PER_STEP//2}} )).rgb) - lumaLocalAverage;
                     $$ endfor
                 }
                 lumaEnd2 = lumaEnd_{{SAMPLES_PER_STEP-1}};
