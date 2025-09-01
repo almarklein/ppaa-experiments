@@ -127,6 +127,11 @@ class Renderer_ddaa1(WgslFullscreenRenderer):
 class Renderer_ddaa2(WgslFullscreenRenderer):
     SHADER = "ddaa2.wgsl"
 
+    TEMPLATE_VARS = {
+        **WgslFullscreenRenderer.TEMPLATE_VARS,
+        "SAMPLES_PER_STEP": 6,
+        "MAX_EDGE_ITERS": 3,
+    }
 
 # SMAA: Subpixel Morphological Anti Aliasing
 # Would be nice (is available as wgsl in Bevy) but is multi-pass, and we focus on single-pass for now.
@@ -175,7 +180,7 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 # Default no subset
 exp_renderers = None
 
-# exp_renderers = [Renderer_ddaa2]
+exp_renderers = [Renderer_fxaa3, Renderer_ddaa2]
 
 
 # ----------------------------  AA filtering
