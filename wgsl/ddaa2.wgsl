@@ -10,6 +10,10 @@
 // ========== CONFIG ==========
 
 
+$$ if SAMPLES_FOR_FIRST_STEP is not defined
+$$ set SAMPLES_FOR_FIRST_STEP = 4
+$$ endif
+
 // The number of samples per step, i.e. per batch of samples.
 // Combining samples in a batch helps performance because the texture queries can be
 // performed in parallel, to a certain degree. The SAMPLES_PER_STEP should be an even number
@@ -162,11 +166,12 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
 
         // Average luma in the current direction.
         var lumaLocalAverage = 0.0;
-        if abs(gradient1) >= abs(gradient2) {
+        let gradient2IsHigher = abs(gradient2) > abs(gradient1);
+        if  gradient2IsHigher {
+            lumaLocalAverage = 0.5 * (luma2 + lumaCenter);
+        } else {
             stepLength = -stepLength;  // switch the direction
             lumaLocalAverage = 0.5 * (luma1 + lumaCenter);
-        } else {
-            lumaLocalAverage = 0.5 * (luma2 + lumaCenter);
         }
 
         // Shift UV in the correct direction by half a pixel (orthogonal to the edge)
@@ -186,50 +191,56 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
         var lumaEnd2: f32;
 
         // Declare variables for samples
-        $$ for si in range(0, SAMPLES_PER_STEP)
+        $$ set N_LUMA_VARS = [SAMPLES_PER_STEP, SAMPLES_FOR_FIRST_STEP] | max
+        $$ for si in range(0, N_LUMA_VARS)
         var lumaEnd_{{si}}: f32;
         $$ endfor
 
         // Read the lumas at both current extremities of the exploration segment, and compute the delta wrt to the local average luma.
+        // TODO: can I use the lumaSE+NE etc. to create the first two samples?
         if isHorizontal {
-            $$ for si in range(0, SAMPLES_PER_STEP//2)
+            lumaEnd_0 = 0.5 * (lumaW + select(lumaSW, lumaNW, gradient2IsHigher)) - lumaLocalAverage;
+            lumaEnd_{{SAMPLES_FOR_FIRST_STEP//2}} = 0.5 * (lumaE + select(lumaSE, lumaNE, gradient2IsHigher)) - lumaLocalAverage;
+            $$ for si in range(1, SAMPLES_FOR_FIRST_STEP//2)
             lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, -vec2i({{ si + 1 }}, 0)).rgb) - lumaLocalAverage;
             $$ endfor
-            $$ for si in range(SAMPLES_PER_STEP//2, SAMPLES_PER_STEP)
-            lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{ si - SAMPLES_PER_STEP//2 + 1 }}, 0)).rgb) - lumaLocalAverage;
+            $$ for si in range(1+SAMPLES_FOR_FIRST_STEP//2, SAMPLES_FOR_FIRST_STEP)
+            lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i({{ si - SAMPLES_FOR_FIRST_STEP//2 + 1 }}, 0)).rgb) - lumaLocalAverage;
             $$ endfor
         } else {
-            $$ for si in range(0, SAMPLES_PER_STEP//2)
+            lumaEnd_0 = 0.5 * (lumaS + select(lumaSW, lumaSE, gradient2IsHigher)) - lumaLocalAverage;
+            lumaEnd_{{SAMPLES_FOR_FIRST_STEP//2}} = 0.5 * (lumaN + select(lumaNW, lumaNE, gradient2IsHigher)) - lumaLocalAverage;
+            $$ for si in range(1, SAMPLES_FOR_FIRST_STEP//2)
             lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, -vec2i(0, {{ si + 1 }})).rgb) - lumaLocalAverage;
             $$ endfor
-            $$ for si in range(SAMPLES_PER_STEP//2, SAMPLES_PER_STEP)
-            lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{ si - SAMPLES_PER_STEP//2 + 1 }})).rgb) - lumaLocalAverage;
+            $$ for si in range(1+SAMPLES_FOR_FIRST_STEP//2, SAMPLES_FOR_FIRST_STEP)
+            lumaEnd_{{ si }} = rgb2luma(textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(0, {{ si - SAMPLES_FOR_FIRST_STEP//2 + 1 }})).rgb) - lumaLocalAverage;
             $$ endfor
         }
 
         // The lumaEnd is at least that of the furthest pixel
-        lumaEnd1 = lumaEnd_{{SAMPLES_PER_STEP//2-1}};
-        lumaEnd2 = lumaEnd_{{SAMPLES_PER_STEP-1}};
+        // lumaEnd1 = lumaEnd_{{SAMPLES_FOR_FIRST_STEP//2-1}};
+        // lumaEnd2 = lumaEnd_{{SAMPLES_FOR_FIRST_STEP-1}};
 
         // Search for left endpoint in the current 4 samples
-        $$ for si in range(0, SAMPLES_PER_STEP//2) | reverse
+        $$ for si in range(0, SAMPLES_FOR_FIRST_STEP//2) | reverse
         if (abs(lumaEnd_{{si}}) >= gradientScaled) { distance1 = {{si+1}}.0; lumaEnd1 = lumaEnd_{{si}}; }
         $$ endfor
 
         // Same for the right endpoint
-        $$ for si in range(SAMPLES_PER_STEP//2, SAMPLES_PER_STEP) | reverse
-        if (abs(lumaEnd_{{si}}) >= gradientScaled) { distance2 = {{si-SAMPLES_PER_STEP//2+1}}.0; lumaEnd2 = lumaEnd_{{si}}; }
+        $$ for si in range(SAMPLES_FOR_FIRST_STEP//2, SAMPLES_FOR_FIRST_STEP) | reverse
+        if (abs(lumaEnd_{{si}}) >= gradientScaled) { distance2 = {{si-SAMPLES_FOR_FIRST_STEP//2+1}}.0; lumaEnd2 = lumaEnd_{{si}}; }
         $$ endfor
 
         // Now search for endpoints in a series of rounds, using a templated (i.e. unrolled) loop.
         // This is much faster (in WGSL) than a normal loop, probably due to optimization related to the texture lookups.
         // I found it also helps performance to use the same uv coordinate and use the offset parameter.
 
-        var max_distance = {{SAMPLES_PER_STEP//2}}.0;
+        var max_distance = {{SAMPLES_FOR_FIRST_STEP//2}}.0;
 
         $$ set ns = namespace(stepOffset=0)
         $$ for iter in range(1, MAX_EDGE_ITERS)
-            $$ set ns.stepOffset = SAMPLES_PER_STEP//2 + (iter - 1) * SAMPLES_PER_STEP
+            $$ set ns.stepOffset = SAMPLES_FOR_FIRST_STEP//2 + (iter - 1) * SAMPLES_PER_STEP
             // Iteration {{ iter }}
             max_distance = {{ SAMPLES_PER_STEP + ns.stepOffset }}.0;
             if (distance1 > 900.0) {
