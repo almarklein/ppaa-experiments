@@ -12,6 +12,10 @@
 //
 // Inspired by https://therealmjp.github.io/posts/msaa-resolve-filters/
 // and         https://bartwronski.com/2022/03/07/fast-gpu-friendly-antialiasing-downsampling-filter/
+//
+// Changelog:
+// v1.1     - Initial version.
+// v1.2     - Avoid using out-of-range values for the integer sample offset. Cubic kernels with scale factor > 4 are truncated.
 
 
 fn filterweightBox(t: vec2f) -> f32 {
