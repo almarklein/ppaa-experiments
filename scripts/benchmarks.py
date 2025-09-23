@@ -15,10 +15,10 @@ win11_rtx_2070 = {
 }
 
 win11_radeon_780m = {
-    "fxaac": 200,
-    "fxaa": 300,
+    "fxaac": 205,
+    "fxaa": 305,
     "ddaa1": 210,
-    "ddaa2": 335,
+    "ddaa2": 310,  # with 5x4=15 samples along the edge (6 3 5)
 }
 
 
