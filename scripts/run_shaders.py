@@ -51,11 +51,8 @@ class Renderer_ssaax2(SSAAFullScreenRenderer):
 
 
 class Renderer_ssaax4(SSAAFullScreenRenderer):
+    # Note: 4 is the largest scale factor for which kernels are not truncated.
     TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 4}
-
-
-class Renderer_ssaax8(SSAAFullScreenRenderer):
-    TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 8}
 
 
 # Upsampling
@@ -133,6 +130,7 @@ class Renderer_ddaa2(WgslFullscreenRenderer):
         "MAX_EDGE_ITERS": 3,
     }
 
+
 # SMAA: Subpixel Morphological Anti Aliasing
 # Would be nice (is available as wgsl in Bevy) but is multi-pass, and we focus on single-pass for now.
 # https://github.com/bevyengine/bevy/blob/main/crates/bevy_anti_aliasing/src/smaa/smaa.wgsl
@@ -189,7 +187,6 @@ for Renderer in [
     # SSAA
     Renderer_ssaax2,
     Renderer_ssaax4,
-    Renderer_ssaax8,
     # PPAA
     Renderer_dlaa,
     Renderer_fxaa2,
