@@ -174,6 +174,11 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     $$          set delta1 = - kernelSupportInt - 1
     $$          set delta2 =   kernelSupportInt + 1
     $$      endif
+    {#     Integer offsets in texture sample must be in the range [-8, 7] (inclusive) #}
+    {#     This means that the maximum kernel size is 16x16 (i.e. 256 samples), and that the kernel is truncated for scales > 4. #}
+    {#     Note that delta2 is exclusive, as in range(delta1, delta2), so we use 8 for both. #}
+    $$     set delta1 = [delta1, -8] | max
+    $$     set delta2 = [delta2,  8] | min
     $$  endif
 
     {# Optimalization for scale factor being a whole uneven number #}
