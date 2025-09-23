@@ -95,14 +95,15 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     let fPosOrig: vec2f = texCoordOrig * resolution;
     // Get the nearest integer pixel index into the source texture (floor, not round!), for an odd kernel.
     let iPosNear: vec2i = vec2i(fPosOrig);
-    // Select the reference pixel index representing the left pixel of an even kernel.
-    let iPosLeft: vec2i = vec2i(round(fPosOrig)) - 1;
+    // Select the reference pixel index for even kernels; the right (not left) pixel.
+    // Why the right? Because then we can make maximum use of the integer offset when sampling from the texture.
+    let iPosEven: vec2i = vec2i(round(fPosOrig));
     // Project the rounded pixel location back to float, representing the center of that pixel
     let fPosNear = vec2f(iPosNear) + 0.5;
-    let fPosLeft = vec2f(iPosLeft) + 0.5;
+    let fPosEven = vec2f(iPosEven) + 0.5;
     // Translate to texture coords
     let texCoordNear = fPosNear * invPixelSize;
-    let texCoordLeft = fPosLeft * invPixelSize;
+    let texCoordEven = fPosEven * invPixelSize;
 
     //  0.   1.   2.   3.   4.   position
     //   ____ ____ ____ ____
@@ -114,8 +115,8 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     //
     //  fPosOrig = 2.4
     //  iPosNear = 2
-    //  iPosLeft = 1
-    //  fPosLeft = 1.5
+    //  iPosEven = 2
+    //  fPosEven = 2.5
 
     $$ set originalFilter = filter
 
@@ -168,10 +169,10 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
     $$          set delta1 = - kernelSupportInt
     $$          set delta2 =   kernelSupportInt + 1
     $$      else
-    {#          Otherwitse use an even kernel, centered around the two nearest pixels. #}
-    $$          set refPos = "Left"
-    $$          set delta1 = - kernelSupportInt
-    $$          set delta2 =   kernelSupportInt + 2
+    {#          Otherwise use an even kernel, centered around the two nearest pixels. #}
+    $$          set refPos = "Even"
+    $$          set delta1 = - kernelSupportInt - 1
+    $$          set delta2 =   kernelSupportInt + 1
     $$      endif
     $$  endif
 
