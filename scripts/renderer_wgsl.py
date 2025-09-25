@@ -1,6 +1,7 @@
 """Utility to do a full-screen pass using a WGSL shader."""
 
 import os
+import time
 
 import jinja2
 import wgpu
@@ -142,6 +143,10 @@ class WgslFullscreenRenderer:
 
         niters = 100 if benchmark else 1
 
+        # Allow the GPU to breath, resulting in lower stds
+        if benchmark:
+            time.sleep(0.1)
+
         # Render!
         times = []
         for i in range(niters):
@@ -180,7 +185,8 @@ class WgslFullscreenRenderer:
 
             times = times[niters // 4 : -niters // 4]
 
-            self.last_time = f"mean: {np.mean(times):0.0f},  median: {times[len(times) // 2]} us,  std: {np.std(times):0.0f}, range: [{times[0]}, {times[-1]}]"
+            # self.last_time = f"mean: {np.mean(times):0.0f},  median: {times[len(times) // 2]} us,  std: {np.std(times):0.0f}, range: [{times[0]}, {times[-1]}]"
+            self.last_time = f"{np.mean(times):0.0f} ± {np.std(times):0.0f} us"
 
         return self._read_texture(tex2)
 

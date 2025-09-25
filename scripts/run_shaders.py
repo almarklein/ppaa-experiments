@@ -190,6 +190,14 @@ exp_renderers = [
 ]
 
 
+image_names = [
+    "lines.png",
+    # "circles.png",
+    "synthetic.png",
+    "egypt.png",
+]
+
+
 # ----------------------------  AA filtering
 
 for Renderer in [
@@ -215,7 +223,7 @@ for Renderer in [
         hirez_flag = "x" + str(scale_factor).rstrip(".0")
     shadername = renderer.SHADER.split(".")[0] + hirez_flag
 
-    for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+    for fname in image_names:
         name = fname.rpartition(".")[0]
 
         input_fname = os.path.join(all_images_dir, f"{name}{hirez_flag}.png")
@@ -224,7 +232,8 @@ for Renderer in [
         if hirez_flag and not os.path.isfile(input_fname):
             continue
 
-        print(f"    Generating {name} (in {os.path.basename(output_fname)})")
+        info = f"    Generating {name} ({os.path.basename(output_fname)})"
+        print(info, end="")
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
@@ -235,7 +244,7 @@ for Renderer in [
 
         if exp_renderers:
             renderer.render(im1, benchmark=True)
-            print("    " + renderer.last_time)
+            print(" " * (50 - len(info)) + renderer.last_time)
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 
@@ -254,7 +263,7 @@ for Renderer in [
     print(f"Upsampling with {Renderer.__name__}")
     renderer = Renderer()
 
-    for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+    for fname in image_names:
         name = fname.rpartition(".")[0]
         shadername = "up_" + Renderer.TEMPLATE_VARS["filter"]
 
