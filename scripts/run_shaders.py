@@ -130,8 +130,8 @@ class Renderer_ddaa2(WgslFullscreenRenderer):
     TEMPLATE_VARS = {
         **WgslFullscreenRenderer.TEMPLATE_VARS,
         "SAMPLES_FOR_FIRST_STEP": 6,
-        "SAMPLES_PER_STEP": 4,
-        "MAX_EDGE_ITERS": 4,
+        "SAMPLES_PER_STEP": 3,
+        "MAX_EDGE_ITERS": 5,
     }
 
 
@@ -183,9 +183,9 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 exp_renderers = None
 
 exp_renderers = [
-    # Renderer_fxaa3c,
-    # Renderer_fxaa3,
-    # Renderer_ddaa1,
+    Renderer_fxaa3c,
+    Renderer_fxaa3,
+    Renderer_ddaa1,
     Renderer_ddaa2,
 ]
 
@@ -224,7 +224,7 @@ for Renderer in [
         if hirez_flag and not os.path.isfile(input_fname):
             continue
 
-        print(f"    Generating {name} (in {output_fname})")
+        print(f"    Generating {name} (in {os.path.basename(output_fname)})")
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
@@ -235,9 +235,7 @@ for Renderer in [
 
         if exp_renderers:
             renderer.render(im1, benchmark=True)
-            print(f"    {renderer.last_time * 1000000:0.0f} us")
-            renderer.render(im1, benchmark=True)
-            print(f"    {renderer.last_time * 1000000:0.0f} us")
+            print("    " + renderer.last_time)
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 
@@ -263,7 +261,7 @@ for Renderer in [
         input_fname = os.path.join(all_images_dir, fname)
         output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")
 
-        print(f"    Generating {name} (in {output_fname})")
+        print(f"    Generating {name} (in {os.path.basename(output_fname)})")
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
@@ -274,9 +272,7 @@ for Renderer in [
 
         if exp_renderers:
             renderer.render(im1, benchmark=True)
-            print(f"    {renderer.last_time * 1000000:0.0f} us")
-            renderer.render(im1, benchmark=True)
-            print(f"    {renderer.last_time * 1000000:0.0f} us")
+            print("    " + renderer.last_time)
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 

@@ -1,7 +1,6 @@
 """Utility to do a full-screen pass using a WGSL shader."""
 
 import os
-import time
 
 import jinja2
 import wgpu
@@ -85,7 +84,17 @@ class WgslFullscreenRenderer:
 
         if self._device is None:
             adapter = wgpu.gpu.request_adapter_sync()
-            self._device = adapter.request_device_sync()
+            self._device = adapter.request_device_sync(
+                required_features=[wgpu.FeatureName.timestamp_query]
+            )
+            self._query_set = self._device.create_query_set(
+                type=wgpu.QueryType.timestamp, count=2
+            )
+            self._query_buf = self._device.create_buffer(
+                size=8 * self._query_set.count,
+                usage=wgpu.BufferUsage.QUERY_RESOLVE | wgpu.BufferUsage.COPY_SRC,
+            )
+
         device = self._device
 
         if self._pipeline is None:
@@ -131,30 +140,47 @@ class WgslFullscreenRenderer:
         # Upload
         self._write_texture(tex1, image)
 
-        niters = 1
-        if benchmark:
-            niters = 1000
-            device._poll_wait()
-            time.sleep(0.1)
-            device._poll_wait()
+        niters = 100 if benchmark else 1
 
         # Render!
-        t0 = time.perf_counter()
-        command_encoder = self._device.create_command_encoder()
+        times = []
         for i in range(niters):
+            command_encoder = self._device.create_command_encoder()
+
             render_pass = command_encoder.begin_render_pass(
                 color_attachments=[attachment],
                 depth_stencil_attachment=None,
+                timestamp_writes={
+                    "query_set": self._query_set,
+                    "beginning_of_pass_write_index": 0,
+                    "end_of_pass_write_index": 1,
+                },
             )
             render_pass.set_pipeline(self._pipeline)
             render_pass.set_bind_group(0, bind_group, [], 0, 99)
             render_pass.draw(4, 1)
             render_pass.end()
 
-        device.queue.submit([command_encoder.finish()])
-        device._poll_wait()  # wait
-        t1 = time.perf_counter()
-        self.last_time = (t1 - t0) / niters
+            command_encoder.resolve_query_set(
+                query_set=self._query_set,
+                first_query=0,
+                query_count=2,
+                destination=self._query_buf,
+                destination_offset=0,
+            )
+
+            device.queue.submit([command_encoder.finish()])
+
+            timestamps = device.queue.read_buffer(self._query_buf).cast("Q").tolist()
+            times.append(timestamps[1] - timestamps[0])  # in ns
+
+        if benchmark:
+            times.sort()
+            times = [int(t / 1000) for t in times]  # turn to us and make int
+
+            times = times[niters // 4 : -niters // 4]
+
+            self.last_time = f"mean: {np.mean(times):0.0f},  median: {times[len(times) // 2]} us,  std: {np.std(times):0.0f}, range: [{times[0]}, {times[-1]}]"
 
         return self._read_texture(tex2)
 
