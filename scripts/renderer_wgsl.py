@@ -64,9 +64,10 @@ class WgslFullscreenRenderer:
 
     TEMPLATE_VARS = {"scaleFactor": 1}
 
-    def __init__(self, **template_vars):
+    def __init__(self, adapter, **template_vars):
         self._shader = open(os.path.join(shader_dir, self.SHADER), "rb").read().decode()
 
+        self._adapter = adapter
         self._device = None
         self._pipeline = None
         self._bind_group = None
@@ -84,8 +85,7 @@ class WgslFullscreenRenderer:
         scale_factor = self.TEMPLATE_VARS["scaleFactor"]
 
         if self._device is None:
-            adapter = wgpu.gpu.request_adapter_sync()
-            self._device = adapter.request_device_sync(
+            self._device = self._adapter.request_device_sync(
                 required_features=[wgpu.FeatureName.timestamp_query]
             )
             self._query_set = self._device.create_query_set(

@@ -9,6 +9,7 @@ import shutil
 
 from PIL import Image
 import numpy as np
+import wgpu
 
 from renderer_wgsl import WgslFullscreenRenderer
 
@@ -198,6 +199,20 @@ image_names = [
 ]
 
 
+# ---------------------------- Select adapter
+
+
+adapter = wgpu.gpu.request_adapter_sync(power_preference="high-performance")
+
+# adapters = wgpu.gpu.enumerate_adapters_sync()
+# for i, a in enumerate(adapters):
+#     print(f"{i}: {a.summary}")
+# adapter = adapters[1]
+
+print("Benchmarking with", adapter.summary)
+print()
+
+
 # ----------------------------  AA filtering
 
 for Renderer in [
@@ -216,7 +231,7 @@ for Renderer in [
     if exp_renderers and Renderer not in exp_renderers:
         continue
     print(f"Rendering with {Renderer.__name__}")
-    renderer = Renderer()
+    renderer = Renderer(adapter)
     hirez_flag = ""
     scale_factor = Renderer.TEMPLATE_VARS["scaleFactor"]
     if issubclass(Renderer, WgslFullscreenRenderer) and scale_factor > 1:
@@ -261,7 +276,7 @@ for Renderer in [
     if exp_renderers and Renderer not in exp_renderers:
         continue
     print(f"Upsampling with {Renderer.__name__}")
-    renderer = Renderer()
+    renderer = Renderer(adapter)
 
     for fname in image_names:
         name = fname.rpartition(".")[0]
