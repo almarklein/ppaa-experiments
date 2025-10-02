@@ -56,11 +56,8 @@ class Renderer_ssaax2(SSAAFullScreenRenderer):
 
 
 class Renderer_ssaax4(SSAAFullScreenRenderer):
+    # Note: 4 is the largest scale factor for which kernels are not truncated.
     TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 4}
-
-
-class Renderer_ssaax8(SSAAFullScreenRenderer):
-    TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 8}
 
 
 # Upsampling
@@ -225,7 +222,6 @@ for Renderer in [
     # SSAA
     Renderer_ssaax2,
     Renderer_ssaax4,
-    Renderer_ssaax8,
     # PPAA
     Renderer_dlaa,
     Renderer_fxaa2,
