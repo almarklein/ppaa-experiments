@@ -33,6 +33,10 @@ with open(os.path.join(all_images_dir, "README.md"), "bw") as f:
 # ---------------------------- Shaders classes
 
 
+class Renderer_null(WgslFullscreenRenderer):
+    SHADER = "noaa.wgsl"
+
+
 class SSAAFullScreenRenderer(WgslFullscreenRenderer):
     SHADER = "ssaa.wgsl"
     TEMPLATE_VARS = {
@@ -184,16 +188,17 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 exp_renderers = None
 
 exp_renderers = [
-    Renderer_fxaa3c,
+    Renderer_null,
+    # Renderer_fxaa3c,
     Renderer_fxaa3,
-    Renderer_ddaa1,
+    # Renderer_ddaa1,
     Renderer_ddaa2,
 ]
 
 
 image_names = [
     "lines.png",
-    # "circles.png",
+    "circles.png",
     "synthetic.png",
     "egypt.png",
 ]
@@ -216,6 +221,7 @@ print()
 # ----------------------------  AA filtering
 
 for Renderer in [
+    Renderer_null,
     # SSAA
     Renderer_ssaax2,
     Renderer_ssaax4,
@@ -260,6 +266,8 @@ for Renderer in [
         if exp_renderers:
             renderer.render(im1, benchmark=True)
             print(" " * (50 - len(info)) + renderer.last_time)
+        else:
+            print("done")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 
@@ -285,7 +293,8 @@ for Renderer in [
         input_fname = os.path.join(all_images_dir, fname)
         output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")
 
-        print(f"    Generating {name} (in {os.path.basename(output_fname)})")
+        info = f"    Generating {name} (in {os.path.basename(output_fname)})"
+        print(info, end="")
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
@@ -296,7 +305,9 @@ for Renderer in [
 
         if exp_renderers:
             renderer.render(im1, benchmark=True)
-            print("    " + renderer.last_time)
+            print(" " * (50 - len(info)) + renderer.last_time)
+        else:
+            print("done")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 
