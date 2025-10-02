@@ -158,7 +158,7 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 
     # Hirez versions
     if fname in ["lines.png", "circles.png"]:
-        for times in [2, 4, 8]:
+        for times in [2, 4]:
             fname = f"{name}x{times}.png"
             input_fname = os.path.join(src_images_dir, fname)
             output_fname = os.path.join(all_images_dir, fname)
