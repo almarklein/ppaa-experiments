@@ -9,6 +9,7 @@ import shutil
 
 from PIL import Image
 import numpy as np
+import wgpu
 
 from renderer_wgsl import WgslFullscreenRenderer
 
@@ -30,6 +31,10 @@ with open(os.path.join(all_images_dir, "README.md"), "bw") as f:
 
 
 # ---------------------------- Shaders classes
+
+
+class Renderer_null(WgslFullscreenRenderer):
+    SHADER = "noaa.wgsl"
 
 
 class SSAAFullScreenRenderer(WgslFullscreenRenderer):
@@ -126,8 +131,7 @@ class Renderer_ddaa2(WgslFullscreenRenderer):
 
     TEMPLATE_VARS = {
         **WgslFullscreenRenderer.TEMPLATE_VARS,
-        "SAMPLES_PER_STEP": 6,
-        "MAX_EDGE_ITERS": 3,
+        "EDGE_STEP_LIST": [3, 3, 3, 3, 3],
     }
 
 
@@ -152,7 +156,7 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 
     # Hirez versions
     if fname in ["lines.png", "circles.png"]:
-        for times in [2, 4, 8]:
+        for times in [2, 4]:
             fname = f"{name}x{times}.png"
             input_fname = os.path.join(src_images_dir, fname)
             output_fname = os.path.join(all_images_dir, fname)
@@ -178,12 +182,41 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 # Default no subset
 exp_renderers = None
 
-exp_renderers = [Renderer_fxaa3, Renderer_ddaa2]
+exp_renderers = [
+    # Renderer_null,
+    # Renderer_fxaa3c,
+    # Renderer_fxaa3,
+    # Renderer_ddaa1,
+    # Renderer_ddaa2,
+]
+
+
+image_names = [
+    "lines.png",
+    "circles.png",
+    "synthetic.png",
+    "egypt.png",
+]
+
+
+# ---------------------------- Select adapter
+
+
+adapter = wgpu.gpu.request_adapter_sync(power_preference="high-performance")
+
+# adapters = wgpu.gpu.enumerate_adapters_sync()
+# for i, a in enumerate(adapters):
+#     print(f"{i}: {a.summary}")
+# adapter = adapters[1]
+
+print("Benchmarking with", adapter.summary)
+print()
 
 
 # ----------------------------  AA filtering
 
 for Renderer in [
+    Renderer_null,
     # SSAA
     Renderer_ssaax2,
     Renderer_ssaax4,
@@ -198,14 +231,14 @@ for Renderer in [
     if exp_renderers and Renderer not in exp_renderers:
         continue
     print(f"Rendering with {Renderer.__name__}")
-    renderer = Renderer()
+    renderer = Renderer(adapter)
     hirez_flag = ""
     scale_factor = Renderer.TEMPLATE_VARS["scaleFactor"]
     if issubclass(Renderer, WgslFullscreenRenderer) and scale_factor > 1:
         hirez_flag = "x" + str(scale_factor).rstrip(".0")
     shadername = renderer.SHADER.split(".")[0] + hirez_flag
 
-    for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+    for fname in image_names:
         name = fname.rpartition(".")[0]
 
         input_fname = os.path.join(all_images_dir, f"{name}{hirez_flag}.png")
@@ -214,7 +247,8 @@ for Renderer in [
         if hirez_flag and not os.path.isfile(input_fname):
             continue
 
-        print(f"    Generating {name} (in {output_fname})")
+        info = f"    Generating {name} ({os.path.basename(output_fname)})"
+        print(info, end="")
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
@@ -225,9 +259,9 @@ for Renderer in [
 
         if exp_renderers:
             renderer.render(im1, benchmark=True)
-            print(f"    {renderer.last_time * 1000000:0.0f} us")
-            renderer.render(im1, benchmark=True)
-            print(f"    {renderer.last_time * 1000000:0.0f} us")
+            print(" " * (50 - len(info)) + renderer.last_time)
+        else:
+            print("done")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 
@@ -244,16 +278,17 @@ for Renderer in [
     if exp_renderers and Renderer not in exp_renderers:
         continue
     print(f"Upsampling with {Renderer.__name__}")
-    renderer = Renderer()
+    renderer = Renderer(adapter)
 
-    for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+    for fname in image_names:
         name = fname.rpartition(".")[0]
         shadername = "up_" + Renderer.TEMPLATE_VARS["filter"]
 
         input_fname = os.path.join(all_images_dir, fname)
         output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")
 
-        print(f"    Generating {name} (in {output_fname})")
+        info = f"    Generating {name} (in {os.path.basename(output_fname)})"
+        print(info, end="")
 
         im1 = Image.open(input_fname).convert("RGBA")
         im1 = np.asarray(im1).copy()
@@ -264,9 +299,9 @@ for Renderer in [
 
         if exp_renderers:
             renderer.render(im1, benchmark=True)
-            print(f"    {renderer.last_time * 1000000:0.0f} us")
-            renderer.render(im1, benchmark=True)
-            print(f"    {renderer.last_time * 1000000:0.0f} us")
+            print(" " * (50 - len(info)) + renderer.last_time)
+        else:
+            print("done")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 

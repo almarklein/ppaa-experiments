@@ -64,15 +64,16 @@ class WgslFullscreenRenderer:
 
     TEMPLATE_VARS = {"scaleFactor": 1}
 
-    def __init__(self, **template_vars):
+    def __init__(self, adapter, **template_vars):
         self._shader = open(os.path.join(shader_dir, self.SHADER), "rb").read().decode()
 
+        self._adapter = adapter
         self._device = None
         self._pipeline = None
         self._bind_group = None
         self._template_vars = template_vars
 
-    def _format_wgsl(self, wgsl):
+    def _apply_wgsl_templating(self, wgsl):
         template_vars = {}
         template_vars.update(self.TEMPLATE_VARS)
         template_vars.update(self._template_vars)
@@ -84,8 +85,17 @@ class WgslFullscreenRenderer:
         scale_factor = self.TEMPLATE_VARS["scaleFactor"]
 
         if self._device is None:
-            adapter = wgpu.gpu.request_adapter_sync()
-            self._device = adapter.request_device_sync()
+            self._device = self._adapter.request_device_sync(
+                required_features=[wgpu.FeatureName.timestamp_query]
+            )
+            self._query_set = self._device.create_query_set(
+                type=wgpu.QueryType.timestamp, count=2
+            )
+            self._query_buf = self._device.create_buffer(
+                size=8 * self._query_set.count,
+                usage=wgpu.BufferUsage.QUERY_RESOLVE | wgpu.BufferUsage.COPY_SRC,
+            )
+
         device = self._device
 
         if self._pipeline is None:
@@ -131,30 +141,52 @@ class WgslFullscreenRenderer:
         # Upload
         self._write_texture(tex1, image)
 
-        niters = 1
+        niters = 100 if benchmark else 1
+
+        # Allow the GPU to breath, resulting in lower stds
         if benchmark:
-            niters = 1000
-            device._poll_wait()
             time.sleep(0.1)
-            device._poll_wait()
 
         # Render!
-        t0 = time.perf_counter()
-        command_encoder = self._device.create_command_encoder()
+        times = []
         for i in range(niters):
+            command_encoder = self._device.create_command_encoder()
+
             render_pass = command_encoder.begin_render_pass(
                 color_attachments=[attachment],
                 depth_stencil_attachment=None,
+                timestamp_writes={
+                    "query_set": self._query_set,
+                    "beginning_of_pass_write_index": 0,
+                    "end_of_pass_write_index": 1,
+                },
             )
             render_pass.set_pipeline(self._pipeline)
             render_pass.set_bind_group(0, bind_group, [], 0, 99)
             render_pass.draw(4, 1)
             render_pass.end()
 
-        device.queue.submit([command_encoder.finish()])
-        device._poll_wait()  # wait
-        t1 = time.perf_counter()
-        self.last_time = (t1 - t0) / niters
+            command_encoder.resolve_query_set(
+                query_set=self._query_set,
+                first_query=0,
+                query_count=2,
+                destination=self._query_buf,
+                destination_offset=0,
+            )
+
+            device.queue.submit([command_encoder.finish()])
+
+            timestamps = device.queue.read_buffer(self._query_buf).cast("Q").tolist()
+            times.append(timestamps[1] - timestamps[0])  # in ns
+
+        if benchmark:
+            times.sort()
+            times = [int(t / 1000) for t in times]  # turn to us and make int
+
+            times = times[niters // 4 : -niters // 4]
+
+            # self.last_time = f"mean: {np.mean(times):0.0f},  median: {times[len(times) // 2]} us,  std: {np.std(times):0.0f}, range: [{times[0]}, {times[-1]}]"
+            self.last_time = f"{np.mean(times):0.0f} ± {np.std(times):0.0f} us"
 
         return self._read_texture(tex2)
 
@@ -203,13 +235,20 @@ class WgslFullscreenRenderer:
         bind_group_layout = device.create_bind_group_layout(entries=binding_layout)
 
         # Get render pipeline
-        wgsl = SHADER_TEMPLATE + self._shader
-        wgsl = self._format_wgsl(wgsl)
+        templated_wgsl = self._apply_wgsl_templating(self._shader)
+        full_wgsl = SHADER_TEMPLATE + templated_wgsl
 
-        with open(os.path.join(shader_dir, "tmp.wgsl"), "wb") as f:
-            f.write(wgsl.encode())
+        # Store the shader with templating applied in a file not tracked by git.
+        with open(os.path.join(shader_dir, "last.wgsl"), "wb") as f:
+            f.write(full_wgsl.encode())
 
-        shader_module = device.create_shader_module(code=wgsl)
+        # For some shaders, we store this as the default
+        if self.SHADER in ["ddaa1.wgsl", "ddaa2.wgsl"]:
+            default_name = self.SHADER.replace(".wgsl", "_default.wgsl")
+            with open(os.path.join(shader_dir, default_name), "wb") as f:
+                f.write(templated_wgsl.encode())
+
+        shader_module = device.create_shader_module(code=full_wgsl)
 
         pipeline_layout = device.create_pipeline_layout(
             bind_group_layouts=[bind_group_layout]

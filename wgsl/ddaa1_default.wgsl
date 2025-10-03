@@ -12,24 +12,15 @@
 // ========== CONFIG ==========
 
 // The strength of the diffusion. A value of 3 seems to work well.
-$$ if DDAA_STRENGTH is not defined
-$$ set DDAA_STRENGTH = 3.0
-$$ endif
-const DDAA_STRENGTH : f32 = {{ DDAA_STRENGTH }};
+const DDAA_STRENGTH : f32 = 3.0;
 
 // Trims the algorithm from processing darks.
 // low: 0.0833, medium: 0.0625, high: 0.0312, ultra: 0.0156, extreme: 0.0078
-$$ if EDGE_THRESHOLD_MIN is not defined
-$$ set EDGE_THRESHOLD_MIN = 0.0625
-$$ endif
-const EDGE_THRESHOLD_MIN : f32 = {{ EDGE_THRESHOLD_MIN }};
+const EDGE_THRESHOLD_MIN : f32 = 0.0625;
 
 // The minimum amount of local contrast required to apply algorithm.
 // low: 0.250, medium: 0.166, high: 0.0.125, ultra: 0.063, extreme: 0.031
-$$ if EDGE_THRESHOLD_MAX is not defined
-$$ set EDGE_THRESHOLD_MAX = 0.166
-$$ endif
-const EDGE_THRESHOLD_MAX : f32 = {{ EDGE_THRESHOLD_MAX }};
+const EDGE_THRESHOLD_MAX : f32 = 0.166;
 
 
 // ========== Constants and helper functions ==========

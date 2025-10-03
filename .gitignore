@@ -1,4 +1,5 @@
 /wgsl/tmp.wgsl
+/wgsl/last.wgsl
 .DS_Store
 .vscode/
 # Byte-compiled / optimized / DLL files
