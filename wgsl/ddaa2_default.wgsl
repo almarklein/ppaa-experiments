@@ -1,4 +1,4 @@
-// ddaa2.wgsl version 2.3
+// ddaa2.wgsl version 2.4
 //
 // Directional Diffusion Anti Aliasing (DDAA) version 2
 //
@@ -21,6 +21,7 @@
 // v2.1 (2025): Added edge search (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl
 // v2.2 (2025): Made SAMPLES_PER_STEP configurable, and fixed a little sampling bug causing an asymetry.
 // v2.3 (2025): Configure edge search with EDGE_STEP_LIST, optimized sample batching, and get one sample for free.
+// v2.4 (2025): Fix template logic for empty EDGE_STEP_LIST.
 
 
 // ========== CONFIG ==========
