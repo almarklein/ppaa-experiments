@@ -188,7 +188,7 @@ exp_renderers = [
     Renderer_null,
     # Renderer_fxaa3c,
     Renderer_fxaa3,
-    # Renderer_ddaa1,
+    Renderer_ddaa1,
     Renderer_ddaa2,
 ]
 

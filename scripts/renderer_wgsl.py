@@ -73,7 +73,7 @@ class WgslFullscreenRenderer:
         self._bind_group = None
         self._template_vars = template_vars
 
-    def _format_wgsl(self, wgsl):
+    def _apply_wgsl_templating(self, wgsl):
         template_vars = {}
         template_vars.update(self.TEMPLATE_VARS)
         template_vars.update(self._template_vars)
@@ -235,13 +235,20 @@ class WgslFullscreenRenderer:
         bind_group_layout = device.create_bind_group_layout(entries=binding_layout)
 
         # Get render pipeline
-        wgsl = SHADER_TEMPLATE + self._shader
-        wgsl = self._format_wgsl(wgsl)
+        templated_wgsl = self._apply_wgsl_templating(self._shader)
+        full_wgsl = SHADER_TEMPLATE + templated_wgsl
 
-        with open(os.path.join(shader_dir, "tmp.wgsl"), "wb") as f:
-            f.write(wgsl.encode())
+        # Store the shader with templating applied in a file not tracked by git.
+        with open(os.path.join(shader_dir, "last.wgsl"), "wb") as f:
+            f.write(full_wgsl.encode())
 
-        shader_module = device.create_shader_module(code=wgsl)
+        # For some shaders, we store this as the default
+        if self.SHADER in ["ddaa1.wgsl", "ddaa2.wgsl"]:
+            default_name = self.SHADER.replace(".wgsl", "_default.wgsl")
+            with open(os.path.join(shader_dir, default_name), "wb") as f:
+                f.write(templated_wgsl.encode())
+
+        shader_module = device.create_shader_module(code=full_wgsl)
 
         pipeline_layout = device.create_pipeline_layout(
             bind_group_layouts=[bind_group_layout]
