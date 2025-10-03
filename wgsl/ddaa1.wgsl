@@ -1,12 +1,24 @@
 // ddaa1.wgsl version 1.1
 //
-// Directional Diffusion Anti Aliasing (DDAA) version 1: Smooth along the edges based on Scharr kernel.
+// Directional Diffusion Anti Aliasing (DDAA) version 1
 //
-// v0.0: original (2013): https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
-// v1.0: ported to wgsl and tweaked (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
-// v1.1 cleanup.
+// Home: https://github.com/almarklein/ppaa-experiments/blob/main/ddaa.md
+// Source: https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
 //
-// This is the predecessor to ddaa2. It is included for comparison, and because its simpler and faster than ddaa2.
+//
+// Summary:
+//
+// Smooth along the edges based on Scharr kernel. No edge search, so it's simple
+// and fast, but near-horizontal and near-vertical edges have jaggies. This is
+// the predecessor to ddaa2. It is included for comparison, and because its
+// simpler and faster than ddaa2.
+//
+//
+// Changelog:
+//
+// v0.0 (2013): Original https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
+// v1.0 (2025): Ported to wgsl and tweaked https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
+// v1.1 (2025): Cleanup.
 
 
 // ========== CONFIG ==========

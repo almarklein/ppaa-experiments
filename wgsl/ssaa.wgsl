@@ -1,7 +1,12 @@
-// ssaa.wgsl  version 1.1
+// ssaa.wgsl  version 1.2
 //
+// Super-sample anti-aliasing
+//
+// Home: https://github.com/almarklein/ppaa-experiments/blob/main/ssaa.md
 // Source: https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ssaa.wgsl
-// Used in https://github.com/pygfx/pygfx/, this code is somewhat opinionated towards Pygfx.
+//
+//
+// Summary:
 //
 // An interpolation / reconstruction filter that has two purposes:
 // * downsampling: render at a higher resolution, then downsample to reduce aliasing. This is SSAA.
@@ -13,9 +18,13 @@
 // Inspired by https://therealmjp.github.io/posts/msaa-resolve-filters/
 // and         https://bartwronski.com/2022/03/07/fast-gpu-friendly-antialiasing-downsampling-filter/
 //
+// This code uses jinja2 templating, because that we use in PyGfx.
+//
+//
 // Changelog:
-// v1.1     - Initial version.
-// v1.2     - Avoid using out-of-range values for the integer sample offset. Cubic kernels with scale factor > 4 are truncated.
+//
+// v1.1 (2025): Initial version.
+// v1.2 (2025): Avoid using out-of-range values for the integer sample offset. Cubic kernels with scale factor > 4 are truncated.
 
 
 fn filterweightBox(t: vec2f) -> f32 {
