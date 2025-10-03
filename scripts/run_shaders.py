@@ -131,9 +131,7 @@ class Renderer_ddaa2(WgslFullscreenRenderer):
 
     TEMPLATE_VARS = {
         **WgslFullscreenRenderer.TEMPLATE_VARS,
-        "SAMPLES_FOR_FIRST_STEP": 6,
-        "SAMPLES_PER_STEP": 3,
-        "MAX_EDGE_ITERS": 5,
+        "EDGE_STEP_LIST": [3, 3, 3, 3, 3],
     }
 
 
@@ -185,11 +183,11 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 exp_renderers = None
 
 exp_renderers = [
-    Renderer_null,
+    # Renderer_null,
     # Renderer_fxaa3c,
-    Renderer_fxaa3,
-    Renderer_ddaa1,
-    Renderer_ddaa2,
+    # Renderer_fxaa3,
+    # Renderer_ddaa1,
+    # Renderer_ddaa2,
 ]
 
 
