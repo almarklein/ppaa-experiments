@@ -184,7 +184,7 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
         // Step 0 (3 steps)
 
         // Read the lumas at both current extremities of the exploration segment, and compute the delta wrt to the local average luma.
-        // We take 3 steps in both directions, but we get one sample (for free for each direction), so we take 4 samples.
+        // We take 3 steps in both directions, but we get one sample for free (for each direction), so we take 4 samples.
         if isHorizontal {
             lumaEnd_0 = 0.5 * (lumaW + select(lumaSW, lumaNW, gradient2IsHigher)) - lumaLocalAverage;
             lumaEnd_3 = 0.5 * (lumaE + select(lumaSE, lumaNE, gradient2IsHigher)) - lumaLocalAverage;

@@ -23,12 +23,19 @@
 // get one sample for each direction for free, so the actual number of samples
 // for the first edge-search step is EDGE_STEP_LIST[0] * 2 - 2.
 //
-// Note that the the int pixel offset in textureSampleLevel should be [-8..7],
-// so the items in EDGE_STEP_LIST should be <= 14, and the first item <= 7.
 $$ if EDGE_STEP_LIST is not defined
 $$ set EDGE_STEP_LIST = [3, 3, 3, 3, 3]
 $$ endif
+$$ set MAX_EDGE_STEP = EDGE_STEP_LIST | max
 $$ set MAX_EDGE_ITERS = EDGE_STEP_LIST | length
+// Note that the the int pixel offset in textureSampleLevel should be [-8..7],
+// so the items in EDGE_STEP_LIST should be <= 14, and the first item <= 7.
+$$ if EDGE_STEP_LIST[0] > 7
+{{'woops_first_element_in_EDGE_STEP_LIST_must_be_no_larger_than_7'}}
+$$endif
+$$ if MAX_EDGE_STEP > 14
+{{'woops_elements_in_EDGE_STEP_LIST_must_be_no_larger_than_14'}}
+$$endif
 //
 // The templated EDGE_STEP_LIST = {{EDGE_STEP_LIST}}
 const MAX_EDGE_ITERS = {{ MAX_EDGE_ITERS }};  // length(EDGE_STEP_LIST)
@@ -199,7 +206,7 @@ fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
         // Step 0 ({{ ns.edgeSteps }} steps)
 
         // Read the lumas at both current extremities of the exploration segment, and compute the delta wrt to the local average luma.
-        // We take {{ ns.edgeSteps }} steps in both directions, but we get one sample (for free for each direction), so we take {{ ns.edgeSteps * 2 - 2 }} samples.
+        // We take {{ ns.edgeSteps }} steps in both directions, but we get one sample for free (for each direction), so we take {{ ns.edgeSteps * 2 - 2 }} samples.
         if isHorizontal {
             lumaEnd_0 = 0.5 * (lumaW + select(lumaSW, lumaNW, gradient2IsHigher)) - lumaLocalAverage;
             lumaEnd_{{ns.edgeSteps}} = 0.5 * (lumaE + select(lumaSE, lumaNE, gradient2IsHigher)) - lumaLocalAverage;
