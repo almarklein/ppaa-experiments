@@ -16,8 +16,8 @@ jobs:
       - name: Build
         run: |
           mkdir output
-          cp -r html output
-          cp -r images_all output/images_all
+          cp -r html/ output/
+          cp -r images_all/ output/images_all/
       - name: Upload
         uses: actions/upload-pages-artifact@v3
         with:
