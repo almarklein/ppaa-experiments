@@ -1,12 +1,26 @@
 // ddaa2.wgsl version 2.3
 //
-// Directional Diffusion Anti Aliasing (DDAA) version 2: smooth along the edges based on Scharr kernel, and perform edge-search to better support horizontal/vertical edges.
+// Directional Diffusion Anti Aliasing (DDAA) version 2
 //
-// v0.0 (2013): original: https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
-// v1.0 (2025): ported to wgsl and tweaked: https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
-// v2.1 (2025): added edge search (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl
-// v2.2 (2025): made SAMPLES_PER_STEP configurable, and fixed a little sampling bug causing an asymetry.
-// v2.3 (2025): configure edge search with EDGE_STEP_LIST, optimized sample batching, and get one sample for free.
+// Home: https://github.com/almarklein/ppaa-experiments/blob/main/ddaa.md
+// Source: https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl
+//
+//
+// Summary:
+//
+// Smooth along the edges based on Scharr kernel, and perform edge-search to
+// better support horizontal/vertical edges. It this combines a strategy that is
+// good at near-diagonal edges (diffusion) with a strategie that is good at
+// near-horizontal / near-vertical edges (edge-search).
+//
+//
+// Changelog:
+//
+// v0.0 (2013): Original: https://github.com/vispy/experimental/blob/master/fsaa/ddaa.glsl
+// v1.0 (2025): Ported to wgsl and tweaked: https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa1.wgsl
+// v2.1 (2025): Added edge search (2025): https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl
+// v2.2 (2025): Made SAMPLES_PER_STEP configurable, and fixed a little sampling bug causing an asymetry.
+// v2.3 (2025): Configure edge search with EDGE_STEP_LIST, optimized sample batching, and get one sample for free.
 
 
 // ========== CONFIG ==========
