@@ -5,6 +5,7 @@ Then use the viewer to inspect the result.
 """
 
 import os
+import json
 import shutil
 
 from PIL import Image
@@ -180,15 +181,17 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
 # When using a subset of renderers, only these shaders are run, and they are many times and measure performance.
 # Handy during development.
 
+benchmarks = {}
+
 # Default no subset
 exp_renderers = None
 
 exp_renderers = [
-    # Renderer_null,
-    # Renderer_fxaa3c,
-    # Renderer_fxaa3,
-    # Renderer_ddaa1,
-    # Renderer_ddaa2,
+    Renderer_null,
+    Renderer_fxaa3c,
+    Renderer_fxaa3,
+    Renderer_ddaa1,
+    Renderer_ddaa2,
 ]
 
 
@@ -210,9 +213,10 @@ adapter = wgpu.gpu.request_adapter_sync(power_preference="high-performance")
 #     print(f"{i}: {a.summary}")
 # adapter = adapters[1]
 
-print("Benchmarking with", adapter.summary)
+print("Running on", adapter.summary)
 print()
 
+##
 
 # ----------------------------  AA filtering
 
@@ -261,6 +265,8 @@ for Renderer in [
         if exp_renderers:
             renderer.render(im1, benchmark=True)
             print(" " * (50 - len(info)) + renderer.last_time)
+            d = benchmarks.setdefault(Renderer.__name__.partition("_")[2], {})
+            d[name] = min(d.get(name, 9999999), int(renderer.last_time.split()[0]))
         else:
             print("done")
 
@@ -301,9 +307,27 @@ for Renderer in [
         if exp_renderers:
             renderer.render(im1, benchmark=True)
             print(" " * (50 - len(info)) + renderer.last_time)
+            d = benchmarks.setdefault(Renderer.__name__.partition("_")[2], {})
+            d[name] = min(d.get(name, 9999999), int(renderer.last_time.split()[0]))
         else:
             print("done")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 
+
 print("Done!")
+if exp_renderers:
+    alt_benchmarks = benchmarks
+
+    if "null" in benchmarks:
+        alt_benchmarks = {}
+        null_alg = benchmarks["null"]
+        for alg in benchmarks:
+            if alg == "null":
+                continue
+            alt_benchmarks[alg] = {}
+            for name in benchmarks[alg]:
+                alt_benchmarks[alg][name] = int(100 * benchmarks[alg][name] / null_alg[name])
+    # print(json.dumps(benchmarks, indent=4))
+    print(json.dumps(alt_benchmarks, indent=4))
+
