@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Comparison</title>
+    <title>PPAA Image Comparison</title>
     <style>
         body {
             margin: 0;
@@ -74,6 +74,7 @@
         const imageNames = ['lines.png', 'circles.png', 'synthetic.png', 'egypt.png'];
         const up_algorithms = ['up_nearest', 'up_tent', 'up_bspline', 'up_mitchell', 'up_catmull'];
         const aa_algorithms = ['ori', 'ssaax4', 'ssaax2', 'fxaa3', 'axaa', 'ddaa2'];
+        const pageIsLocal = window.location.protocol === 'file:'
 
         // State
 
@@ -90,8 +91,7 @@
         const refreshButton = document.getElementById('refreshImages');
 
         // Tweak / fill DOm elements
-
-        if (window.location.protocol === 'file:') {
+        if (pageIsLocal) {
             refreshButton.style.display = 'inline-block';
         }
 
@@ -167,6 +167,7 @@
                 if (algo == 'ori') { algo = ''; }
                 let suffix = algo ? '_' + algo : '';
                 let src = `images_all/${imageName.split('.')[0]}${suffix}.png`
+                if (pageIsLocal) { src = '../' + src; }
                 let label = algo || 'Original';
 
                 const panel = document.createElement('div');
