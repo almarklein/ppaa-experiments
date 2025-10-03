@@ -42,6 +42,7 @@
 //
 // The templated EDGE_STEP_LIST = [3, 3, 3, 3, 3]
 const MAX_EDGE_ITERS = 5;  // length(EDGE_STEP_LIST)
+const MAX_EDGE_SAMPLES = 15; // sum(EDGE_STEP_LIST), how far the algirithm can look along an edge
 
 // The strength of the diffusion. A value of 3 seems to work well.
 const DDAA_STRENGTH : f32 = 3.0;

@@ -131,6 +131,7 @@ class Renderer_ddaa2(WgslFullscreenRenderer):
 
     TEMPLATE_VARS = {
         **WgslFullscreenRenderer.TEMPLATE_VARS,
+        # "EDGE_STEP_LIST": [],
         "EDGE_STEP_LIST": [3, 3, 3, 3, 3],
     }
 
