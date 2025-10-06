@@ -266,7 +266,7 @@ for Renderer in [
             renderer.render(im1, benchmark=True)
             print(" " * (50 - len(info)) + renderer.last_time)
             d = benchmarks.setdefault(Renderer.__name__.partition("_")[2], {})
-            d[name] = min(d.get(name, 9999999), int(renderer.last_time.split()[0]))
+            d[name] = min(d.get(name, 9999999), renderer._last_us)
         else:
             print("done")
 
@@ -308,7 +308,7 @@ for Renderer in [
             renderer.render(im1, benchmark=True)
             print(" " * (50 - len(info)) + renderer.last_time)
             d = benchmarks.setdefault(Renderer.__name__.partition("_")[2], {})
-            d[name] = min(d.get(name, 9999999), int(renderer.last_time.split()[0]))
+            d[name] = min(d.get(name, 9999999), renderer.last_us)
         else:
             print("done")
 
