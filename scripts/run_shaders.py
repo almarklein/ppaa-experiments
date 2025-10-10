@@ -115,8 +115,8 @@ class Renderer_fxaa2(WgslFullscreenRenderer):
     SHADER = "fxaa2.wgsl"
 
 
-class Renderer_fxaa3(WgslFullscreenRenderer):
-    SHADER = "fxaa3.wgsl"
+class Renderer_fxaa3d(WgslFullscreenRenderer):
+    SHADER = "fxaa3d.wgsl"
 
 
 class Renderer_fxaa3c(WgslFullscreenRenderer):
@@ -191,7 +191,7 @@ exp_renderers = [
     # Renderer_ssaax2,
     # Renderer_ssaax4,
     # Renderer_fxaa3c,
-    # Renderer_fxaa3,
+    # Renderer_fxaa3d,
     # Renderer_ddaa1,
     # Renderer_ddaa2,
 ]
@@ -230,8 +230,8 @@ for Renderer in [
     # PPAA
     Renderer_dlaa,
     Renderer_fxaa2,
-    Renderer_fxaa3,
     Renderer_fxaa3c,
+    Renderer_fxaa3d,
     Renderer_ddaa1,
     Renderer_ddaa2,
 ]:
