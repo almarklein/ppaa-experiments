@@ -1,4 +1,10 @@
 // A shader that simply blurs the image a bit.
+//
+// The purpose of this shader is to demonstrate how blurring removes aliasing
+// effects, but also has negative effects. It can be used to compare more
+// advanced methods with. Plus it may be nice for benchmarking since this shader
+// does a bit more than the noaa shader.
+
 
 @fragment
 fn fs_main(varyings: Varyings) -> @location(0) vec4<f32> {
