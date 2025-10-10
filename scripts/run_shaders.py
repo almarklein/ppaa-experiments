@@ -187,11 +187,13 @@ benchmarks = {}
 exp_renderers = None
 
 exp_renderers = [
-    Renderer_null,
-    Renderer_fxaa3c,
-    Renderer_fxaa3,
-    Renderer_ddaa1,
-    Renderer_ddaa2,
+    # Renderer_null,
+    # Renderer_ssaax2,
+    # Renderer_ssaax4,
+    # Renderer_fxaa3c,
+    # Renderer_fxaa3,
+    # Renderer_ddaa1,
+    # Renderer_ddaa2,
 ]
 
 
@@ -327,7 +329,8 @@ if exp_renderers:
                 continue
             alt_benchmarks[alg] = {}
             for name in benchmarks[alg]:
-                alt_benchmarks[alg][name] = int(100 * benchmarks[alg][name] / null_alg[name])
+                alt_benchmarks[alg][name] = int(
+                    100 * benchmarks[alg][name] / null_alg[name]
+                )
     # print(json.dumps(benchmarks, indent=4))
     print(json.dumps(alt_benchmarks, indent=4))
-
