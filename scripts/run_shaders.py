@@ -34,10 +34,6 @@ with open(os.path.join(all_images_dir, "README.md"), "bw") as f:
 # ---------------------------- Shaders classes
 
 
-class Renderer_null(WgslFullscreenRenderer):
-    SHADER = "noaa.wgsl"
-
-
 class SSAAFullScreenRenderer(WgslFullscreenRenderer):
     SHADER = "ssaa.wgsl"
     TEMPLATE_VARS = {
@@ -107,6 +103,14 @@ class Renderer_up_catmull(SSAAFullScreenRenderer):
 # PPAA filters
 
 
+class Renderer_null(WgslFullscreenRenderer):
+    SHADER = "noaa.wgsl"
+
+
+class Renderer_blur(WgslFullscreenRenderer):
+    SHADER = "blur.wgsl"
+
+
 class Renderer_dlaa(WgslFullscreenRenderer):
     SHADER = "dlaa.wgsl"
 
@@ -115,12 +119,12 @@ class Renderer_fxaa2(WgslFullscreenRenderer):
     SHADER = "fxaa2.wgsl"
 
 
-class Renderer_fxaa3d(WgslFullscreenRenderer):
-    SHADER = "fxaa3d.wgsl"
-
-
 class Renderer_fxaa3c(WgslFullscreenRenderer):
     SHADER = "fxaa3c.wgsl"
+
+
+class Renderer_fxaa3d(WgslFullscreenRenderer):
+    SHADER = "fxaa3d.wgsl"
 
 
 class Renderer_ddaa1(WgslFullscreenRenderer):
@@ -188,6 +192,7 @@ exp_renderers = None
 
 exp_renderers = [
     # Renderer_null,
+    # Renderer_blur,
     # Renderer_ssaax2,
     # Renderer_ssaax4,
     # Renderer_fxaa3c,
@@ -224,6 +229,7 @@ print()
 
 for Renderer in [
     Renderer_null,
+    Renderer_blur,
     # SSAA
     Renderer_ssaax2,
     Renderer_ssaax4,
