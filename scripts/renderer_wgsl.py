@@ -181,12 +181,13 @@ class WgslFullscreenRenderer:
 
         if benchmark:
             times.sort()
-            times = [int(t / 1000) for t in times]  # turn to us and make int
+            times = [(t / 1000) for t in times]  # turn to us
 
             times = times[niters // 4 : -niters // 4]
 
             # self.last_time = f"mean: {np.mean(times):0.0f},  median: {times[len(times) // 2]} us,  std: {np.std(times):0.0f}, range: [{times[0]}, {times[-1]}]"
             self.last_time = f"{np.mean(times):0.0f} ± {np.std(times):0.0f} us"
+            self._last_us = float(np.mean(times))
 
         return self._read_texture(tex2)
 
