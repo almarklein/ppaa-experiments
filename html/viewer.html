@@ -35,19 +35,19 @@
             overflow: hidden;
             position: relative;
             border: 2px solid #000;
-            border-radius: 10px;
+            border-radius: 8px;
         }
 
         .label {
             position: absolute;
             top: 3px;
             left: 3px;
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
             color: black;
-            padding: 3px 6px;
-            font-size: 17px;
-            border-radius: 8px;
-            border: 2px solid black;
+            padding: 2px 5px;
+            font-size: 28px;
+            border-radius: 6px;
+            border: 1px solid #777;
         }
 
         img {
@@ -80,6 +80,7 @@
 
         let algorithms = [];
         let imageName = '';
+        let nColumns = 0;
         let scale = 1, offsetX = 0, offsetY = 0;
         let isPanning = false, startX, startY;
 
@@ -114,7 +115,11 @@
         // Functions
 
         function updateHash(img, algs) {
-            window.location.hash = "image=" + img + "&algs=" + algs.join(",");
+            let hash = "image=" + img + "&algs=" + algs.join(",");
+            if (nColumns > 0) {
+                hash += "&ncols=" + nColumns;
+            }
+            window.location.hash = hash;
         }
 
         function handleHashChange() {
@@ -122,9 +127,8 @@
             const params = new URLSearchParams(hash);
             let img = params.get("image") ?? "";
             let algs = params.get("algs")?.split(',') ?? [];
+            let ncols = Math.floor(Number(params.get("ncols")) || 0);
             algs = algs.filter(str => str !== "");
-
-            // console.log("handleHashChange", img, algs);
 
             // Reset?
             let need_reset = false;
@@ -147,6 +151,13 @@
                 algorithms = algs;
                 need_create_panels = true;
             }
+            if (nColumns != ncols) {
+                nColumns = ncols;
+                need_create_panels = true;
+                if (ncols == 0) {
+                    need_reset = true;
+                }
+            }
 
             if (need_reset) { window.setTimeout(() => updateHash(img, algs), 0); }
             if (need_create_panels) { createPanels(); }
@@ -160,15 +171,21 @@
         function createPanels() {
             container.innerHTML = '';
             const panelCount = algorithms.length;
-            container.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(panelCount))}, 1fr)`;
-            container.style.gridTemplateRows = `repeat(${Math.ceil(Math.sqrt(panelCount))}, 1fr)`;
+            const ratio = document.body.clientWidth / document.body.clientHeight;
+            const ncolsAauto = Math.min(panelCount, Math.floor(ratio * Math.sqrt(panelCount)));
+            let ncols = nColumns;
+            if (ncols <= 0) { ncols = ncolsAauto; }
+            if (ncols <= 0) { ncols = 1; }
+            let nrows = Math.ceil(panelCount / ncols);
+            container.style.gridTemplateColumns = `repeat(${ncols}, 1fr)`;
+            container.style.gridTemplateRows = `repeat(${nrows}, 1fr)`;
 
             algorithms.forEach(algo => {
                 if (algo == 'ori') { algo = ''; }
                 let suffix = algo ? '_' + algo : '';
                 let src = `images_all/${imageName.split('.')[0]}${suffix}.png`
                 if (pageIsLocal) { src = '../' + src; }
-                let label = algo || 'Original';
+                let label = algo || 'original';
 
                 const panel = document.createElement('div');
                 panel.className = 'panel';
@@ -253,6 +270,17 @@
         });
 
         window.addEventListener('mouseup', () => isPanning = false);
+
+        console.log("For screenshots, set the viewport 1200px wide, dpr 2.");
+        console.log("Use window.hideControls() to hide the control bar. Use showControls() to put back.");
+        window.hideControls = function () {
+            let el = document.getElementById('controls');
+            el.style.display = 'none';
+        }
+        window.showControls = function () {
+            let el = document.getElementById('controls');
+            el.style.display = '';
+        }
 
     </script>
 </body>
