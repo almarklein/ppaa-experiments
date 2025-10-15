@@ -19,7 +19,6 @@ def weight_for_filter_gaussian_1d(t, sigma=1.0):
 
 def weight_for_filter_gaussian_o0(t, sigma):
     sigma2 = sigma**2
-    sqrt2 = np.sqrt(2)  # can be a const
     basegauss = np.exp(-(t**2) / (2 * sigma2))
     k = basegauss
     return basegauss, k
@@ -45,17 +44,6 @@ def weight_for_filter_gaussian_o2(t, sigma):
     return basegauss, k * norm_hermite
 
 
-from pirt import gaussfun
-
-tt = np.linspace(-4, 4, 20)
-g1 = gaussfun._gaussiankernel(1, 2, tt)
-b2, g2 = weight_for_filter_gaussian_o2(tt, 1)
-g2 /= b2.sum()
-for k1, k2 in zip(g1, g2):
-    print(k1, k2)
-
-
-##
 def weight_for_filter_cubic_1d(t, B, C):
     t = abs(t)
     w = 0.0
@@ -85,6 +73,9 @@ def weight_for_filter_mitchell_1d_short(t):
     return weight_for_filter_mitchell_1d(t)
 
 
+# %%%%%%%%%%%%%%%%%%%% Figure showing kernel as 2D surface
+
+
 size = 20
 im = np.zeros((size, size), np.float32)
 
@@ -108,7 +99,9 @@ ax = f.add_subplot(111, projection="3d")
 surfx, surfy = np.meshgrid(np.arange(size), np.arange(size))
 ax.plot_surface(surfx, surfy, im)
 
-##
+
+# %%%%%%%%%%%%%%%%%%%% Figure showing kernels in 1D
+
 
 span = 20
 factor = 1
@@ -131,11 +124,7 @@ plt.plot(g1, lw=3, color="blue")
 plt.plot(g2, lw=3, color="cyan")
 
 
-##
-import numpy as np
-import scipy
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
+# %%%%%%%%%%%%%%%%%%%% Interactive figures comparing different kernelss
 
 
 data0 = np.zeros(100)

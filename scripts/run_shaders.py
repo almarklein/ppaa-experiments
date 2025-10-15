@@ -192,13 +192,13 @@ exp_renderers = None
 
 exp_renderers = [
     # Renderer_null,
-    # Renderer_blur,
-    # Renderer_ssaax2,
-    # Renderer_ssaax4,
-    # Renderer_fxaa3c,
-    # Renderer_fxaa3d,
-    # Renderer_ddaa1,
-    # Renderer_ddaa2,
+    Renderer_blur,
+    Renderer_ssaax2,
+    Renderer_ssaax4,
+    Renderer_fxaa3c,
+    Renderer_fxaa3d,
+    Renderer_ddaa1,
+    Renderer_ddaa2,
 ]
 
 
@@ -327,11 +327,12 @@ print("Done!")
 if exp_renderers:
     alt_benchmarks = benchmarks
 
-    if "null" in benchmarks:
+    ref = "blur"
+    if ref in benchmarks:
         alt_benchmarks = {}
-        null_alg = benchmarks["null"]
+        null_alg = benchmarks[ref]
         for alg in benchmarks:
-            if alg == "null":
+            if alg == ref:
                 continue
             alt_benchmarks[alg] = {}
             for name in benchmarks[alg]:

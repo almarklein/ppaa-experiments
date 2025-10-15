@@ -24,3 +24,9 @@ This repo contains an HTML file to compare different ppaa methods. You can see i
 When you've checked out the repo, you can simply open the local html-file in your browser. This is a great tool if you want to e.g. tweak existing methods, add another method, or develop your own method.
 
 <img width="500" alt="image" src="https://github.com/user-attachments/assets/f96eacb9-aecf-45a4-a8ac-0f2d78be33a3" />
+
+
+## Running Python locally
+
+Run ``pip install .`` to install the dependencies.
+Then run e.g. ``python scrips/run_shaders.py``.
