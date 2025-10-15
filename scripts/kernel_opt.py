@@ -1,6 +1,8 @@
 """
 Produce WGSL code to sample a kernel with fixed weights using a trick
 that uses bilinear interpolation to drastically reduce the number of texture lookups.
+
+This is used in e.g. ssaa.wgsl to produce a *much* more efficient kernel for a scale factor of 2.
 """
 
 # %%%%% Functions

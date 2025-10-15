@@ -22,3 +22,4 @@ the scale factor. A special optimization is applied when the scale factor is 2
 * Source code: [ssaa.wgsl](https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ssaa.wgsl)
 * Compare ssaa levels: https://almarklein.github.io/ppaa-experiments/viewer.html#&algs=ori,ssaax2,ssaax4
 * Compare upsampling filters: https://almarklein.github.io/ppaa-experiments/viewer.html#&algs=up_nearest,up_tent,up_bspline,up_mitchell,up_catmull
+* Show interpolation filter kernels: https://almarklein.github.io/ppaa-experiments/interpolate.html
