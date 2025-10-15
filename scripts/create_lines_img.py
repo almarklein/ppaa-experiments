@@ -14,7 +14,6 @@ from PIL import Image, ImageDraw
 
 
 SCALE_FACTOR = 1
-FSAA_FACTOR = SCALE_FACTOR**2
 
 # Image parameters
 width, height = 600, 360

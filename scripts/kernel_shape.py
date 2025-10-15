@@ -1,3 +1,8 @@
+"""
+Some experimental code related to different kernel shapes.
+A bit messy.
+"""
+
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
@@ -10,129 +15,6 @@ plt.ion()
 def weight_for_filter_gaussian_1d(t, sigma=1.0):
     t2 = t / sigma
     return np.exp(-0.5 * t2 * t2)
-
-
-##
-def weight_for_filter_gaussian_on(t, sigma, order):
-    sigma2 = sigma**2
-    sqrt2 = np.sqrt(2)  # can be a const
-
-    # Calculate the unnormalized base Gaussian
-    basegauss = np.exp(-(t**2) / (2 * sigma2))
-
-    # Scale the t-vector, what we actually do is H( t/(sigma*sqrt2) ), where H() is the Hermite polynomial.
-    x = t / (sigma * sqrt2)
-
-    # Depending on the order, calculate the Hermite polynomial (physicists notation).
-    # We let Mathematica calculate these, and put the first 16 orders in here.
-    if order == 0:
-        part = 1
-    elif order == 1:
-        part = 2 * x
-    elif order == 2:
-        part = -2 + 4 * x**2
-    elif order == 3:
-        part = -12 * x + 8 * x**3
-    elif order == 4:
-        part = 12 - 48 * x**2 + 16 * x**4
-    elif order == 5:
-        part = 120 * x - 160 * x**3 + 32 * x**5
-    elif order == 6:
-        part = -120 + 720 * x**2 - 480 * x**4 + 64 * x**6
-    elif order == 7:
-        part = -1680 * x + 3360 * x**3 - 1344 * x**5 + 128 * x**7
-    elif order == 8:
-        part = 1680 - 13440 * x**2 + 13440 * x**4 - 3584 * x**6 + 256 * x**8
-    elif order == 9:
-        part = 30240 * x - 80640 * x**3 + 48384 * x**5 - 9216 * x**7 + 512 * x**9
-    elif order == 10:
-        part = (
-            -30240
-            + 302400 * x**2
-            - 403200 * x**4
-            + 161280 * x**6
-            - 23040 * x**8
-            + 1024 * x**10
-        )
-    elif order == 11:
-        part = (
-            -665280 * x
-            + 2217600 * x**3
-            - 1774080 * x**5
-            + 506880 * x**7
-            - 56320 * x**9
-            + 2048 * x**11
-        )
-    elif order == 12:
-        part = (
-            665280
-            - 7983360 * x**2
-            + 13305600 * x**4
-            - 7096320 * x**6
-            + 1520640 * x**8
-            - 135168 * x**10
-            + 4096 * x**12
-        )
-    elif order == 13:
-        part = (
-            17297280 * x
-            - 69189120 * x**3
-            + 69189120 * x**5
-            - 26357760 * x**7
-            + 4392960 * x**9
-            - 319488 * x**11
-            + 8192 * x**13
-        )
-    elif order == 14:
-        part = (
-            -17297280
-            + 242161920 * x**2
-            - 484323840 * x**4
-            + 322882560 * x**6
-            - 92252160 * x**8
-            + 12300288 * x**10
-            - 745472 * x**12
-            + 16384 * x**14
-        )
-    elif order == 15:
-        part = (
-            -518918400 * x
-            + 2421619200 * x**3
-            - 2905943040 * x**5
-            + 1383782400 * x**7
-            - 307507200 * x**9
-            + 33546240 * x**11
-            - 1720320 * x**13
-            + 32768 * x**15
-        )
-    elif order == 16:
-        part = (
-            518918400
-            - 8302694400 * x**2
-            + 19372953600 * x**4
-            - 15498362880 * x**6
-            + 5535129600 * x**8
-            - 984023040 * x**10
-            + 89456640 * x**12
-            - 3932160 * x**14
-            + 65536 * x**16
-        )
-    else:
-        raise Exception(f"Order {order} is not implemented!")
-
-    # Apply Hermite polynomial to gauss
-    k = (-1) ** order * part * basegauss
-
-    # Normalization term that we need because we use the Hermite polynomials.
-    norm_hermite = 1 / (sigma * sqrt2) ** order
-
-    # A note on Gaussian derivatives: as sigma increases, the resulting
-    # image (when smoothed) will have smaller intensities. To correct for
-    # this (if this is necessary) a diffusion normalization term can be
-    # applied: sigma**2
-
-    # Normalize and return
-    return basegauss, k * norm_hermite
 
 
 def weight_for_filter_gaussian_o0(t, sigma):

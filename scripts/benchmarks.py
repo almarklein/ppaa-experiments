@@ -1,3 +1,7 @@
+"""
+Raw benchmark numbers, and processing them into a simple table.
+"""
+
 benchmarks = {
     "Intel UHD 630": {
         "fxaa3d": {"lines": 707, "circles": 782, "synthetic": 1232, "egypt": 945},

@@ -1,4 +1,6 @@
-"""Utility to do a full-screen pass using a WGSL shader."""
+"""
+Utility to do a full-screen pass using a WGSL shader.
+"""
 
 import os
 import time
