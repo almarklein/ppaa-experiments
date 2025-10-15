@@ -192,13 +192,13 @@ exp_renderers = None
 
 exp_renderers = [
     # Renderer_null,
-    Renderer_blur,
-    Renderer_ssaax2,
-    Renderer_ssaax4,
-    Renderer_fxaa3c,
-    Renderer_fxaa3d,
-    Renderer_ddaa1,
-    Renderer_ddaa2,
+    # Renderer_blur,
+    # Renderer_ssaax2,
+    # Renderer_ssaax4,
+    # Renderer_fxaa3c,
+    # Renderer_fxaa3d,
+    # Renderer_ddaa1,
+    # Renderer_ddaa2,
 ]
 
 
