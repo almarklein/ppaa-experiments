@@ -39,18 +39,17 @@ rendering. Its benefits include simplicity and performance, and because it
 applies anti-aliasing to the full rendered image, it is also useful in cases
 where MSAA cannot be used, such as for lines, markers, and text rendering.
 
-PPAA algorithms can be categorized in a few categories. In one category, the
-direction of an edge is estimated and then smoothing is applied along the edge,
-thereby softening the edge's appearance without (in theory) blurring it. In
-another well known category, an edge-search walks horizontally or vertically
-along the gradient direction, computing a subpixel offset to produce a smooth
-gradient in long edges.
+The proposed method builds on two existing categories of PPAA techniques.
+Firstly, the direction of an edge is estimated and then diffused along the edge,
+thereby softening the edge's appearance without blurring it. Secondly, an
+edge-search walks horizontally or vertically along the gradient direction,
+computing a subpixel offset to produce a smooth gradient in long edges.
 
-The proposed algorithm is a combination of the aforementioned categories,
-applying both diffusion and edge-search. It maintains small structures, and
-avoids artifacts by performing a complete edge search, making it suitable for
-scientific visualizations such as plots. Furthermore, it introduces
-optimizations that allow it to outperform FXAA.
+The algorithm improves on the aforementioned techniques by a more accurate
+edge-angle measurement, maintaining small structures, and avoiding artifacts by
+performing a complete edge search. This makes it suitable for scientific
+visualizations such as plots. Furthermore, it introduces optimizations that
+allow it to outperform FXAA.
 \end{abstract}
 
 
