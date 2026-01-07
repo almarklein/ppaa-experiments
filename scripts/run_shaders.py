@@ -162,7 +162,7 @@ for fname in ["lines.png", "circles.png", "plot.png", "sponza.png", "synthetic.p
     shutil.copy(input_fname, output_fname)
 
     # Hirez versions
-    if fname in ["lines.png", "circles.png"]:
+    if fname not in ["synthetic.png"]:
         for times in [2, 4]:
             fname = f"{name}x{times}.png"
             input_fname = os.path.join(src_images_dir, fname)
