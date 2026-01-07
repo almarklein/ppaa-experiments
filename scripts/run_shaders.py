@@ -2,6 +2,7 @@
 Script to generate the images using the shaders.
 Run this after changing a shader.
 Then use the viewer to inspect the result.
+Also performs benchmark  (set ``exp_renderers``).
 """
 
 import os
@@ -192,13 +193,13 @@ exp_renderers = None
 
 exp_renderers = [
     # Renderer_null,
-    # Renderer_blur,
-    # Renderer_ssaax2,
-    # Renderer_ssaax4,
-    # Renderer_fxaa3c,
-    # Renderer_fxaa3d,
-    # Renderer_ddaa1,
-    # Renderer_ddaa2,
+    Renderer_blur,
+    Renderer_ssaax2,
+    Renderer_ssaax4,
+    Renderer_fxaa3c,
+    Renderer_fxaa3d,
+    Renderer_ddaa1,
+    Renderer_ddaa2,
 ]
 
 
@@ -332,8 +333,6 @@ if exp_renderers:
         alt_benchmarks = {}
         null_alg = benchmarks[ref]
         for alg in benchmarks:
-            if alg == ref:
-                continue
             alt_benchmarks[alg] = {}
             for name in benchmarks[alg]:
                 alt_benchmarks[alg][name] = int(
