@@ -38,7 +38,7 @@
             border-radius: 8px;
         }
 
-        .label {
+        .panel .label {
             position: absolute;
             top: 3px;
             left: 3px;
@@ -50,7 +50,13 @@
             border: 1px solid #777;
         }
 
-        img {
+        .panel .na {
+            text-align: center;
+            font-size: 120%;
+            color: #888;
+        }
+
+        .panel img {
             width: 100%;
             position: absolute;
             transform-origin: top left;
@@ -190,9 +196,15 @@
                 const panel = document.createElement('div');
                 panel.className = 'panel';
 
-                const img = document.createElement('img');
+                let img = document.createElement('img');
                 img.src = src;
                 img.draggable = false;
+
+                if (imageName == 'synthetic.png' && algo.startsWith('ssaa')) {
+                    img = document.createElement("div");
+                    img.innerHTML = "<br>Image not available for SSAA";
+                    img.className = 'na';
+                }
 
                 const lbl = document.createElement('div');
                 lbl.className = 'label';
