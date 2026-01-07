@@ -154,7 +154,7 @@ class Renderer_ddaa2(WgslFullscreenRenderer):
 
 # ---------------------------- Copy source images
 
-for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+for fname in ["lines.png", "circles.png", "plot.png", "sponza.png", "synthetic.png"]:
     name = fname.rpartition(".")[0]
 
     input_fname = os.path.join(src_images_dir, fname)
@@ -206,8 +206,9 @@ exp_renderers = [
 image_names = [
     "lines.png",
     "circles.png",
+    "plot.png",
+    "sponza.png",
     "synthetic.png",
-    "egypt.png",
 ]
 
 
