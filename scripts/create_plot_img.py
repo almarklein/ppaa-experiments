@@ -11,7 +11,8 @@ from rendercanvas.offscreen import RenderCanvas as OffscreenRenderCanvas
 from rendercanvas.auto import RenderCanvas, loop
 import pygfx as gfx
 from pylinalg import vec_transform, vec_unproject
-import imageio
+from PIL import Image
+
 
 scene = gfx.Scene()
 
@@ -137,7 +138,7 @@ for scale_factor in (1, 2, 4):
     im = ocan.draw()
     im = np.asarray(im)
     im[:, :, 3] = 255
-    imageio.imwrite(filename, im)
+    Image.fromarray(im).convert("RGB").save(filename)
 
 
 if __name__ == "__main__":

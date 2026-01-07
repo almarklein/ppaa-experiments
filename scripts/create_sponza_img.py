@@ -10,7 +10,8 @@ import numpy as np
 from rendercanvas.auto import RenderCanvas, loop
 from rendercanvas.offscreen import RenderCanvas as OffscreenRenderCanvas
 import pygfx as gfx
-import imageio
+from PIL import Image
+
 
 # Create camera with predetermined state/position
 camera = gfx.PerspectiveCamera(45, 1)
@@ -81,7 +82,7 @@ for scale_factor in (1, 2, 4):
     im = ocan.draw()
     im = np.asarray(im)
     im[:, :, 3] = 255
-    imageio.imwrite(filename, im)
+    Image.fromarray(im).convert("RGB").save(filename)
 
 
 # Enter loop to show the scene interactively
