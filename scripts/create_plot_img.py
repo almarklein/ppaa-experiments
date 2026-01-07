@@ -135,6 +135,8 @@ for scale_factor in (1, 2, 4):
     ocan.set_physical_size(640 * scale_factor, 480 * scale_factor)
     ocan.set_pixel_ratio(scale_factor)
     im = ocan.draw()
+    im = np.asarray(im)
+    im[:,:,3] = 255
     imageio.imwrite(filename, im)
 
 

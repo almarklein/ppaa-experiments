@@ -6,6 +6,7 @@ This uses PyGfx to render the scene at a few resolutions.
 
 import os
 
+import numpy as np
 from rendercanvas.auto import RenderCanvas, loop
 from rendercanvas.offscreen import RenderCanvas as OffscreenRenderCanvas
 import pygfx as gfx
@@ -78,6 +79,8 @@ for scale_factor in (1, 2, 4):
     ocan.set_physical_size(512 * scale_factor, 512 * scale_factor)
     ocan.set_pixel_ratio(scale_factor)
     im = ocan.draw()
+    im = np.asarray(im)
+    im[:,:,3] = 255
     imageio.imwrite(filename, im)
 
 
