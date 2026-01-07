@@ -80,7 +80,7 @@ for scale_factor in (1, 2, 4):
     ocan.set_pixel_ratio(scale_factor)
     im = ocan.draw()
     im = np.asarray(im)
-    im[:,:,3] = 255
+    im[:, :, 3] = 255
     imageio.imwrite(filename, im)
 
 
