@@ -170,17 +170,6 @@ for fname in ["lines.png", "circles.png", "plot.png", "sponza.png", "synthetic.p
             shutil.copy(input_fname, output_fname)
 
 
-# ---------------------------- Copy pre-obtained images
-
-for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
-    name = fname.rpartition(".")[0]
-    fname = f"{name}_axaa.png"
-    input_fname = os.path.join(pre_images_dir, fname)
-    output_fname = os.path.join(all_images_dir, fname)
-
-    shutil.copy(input_fname, output_fname)
-
-
 # ----------------------------  Select experiment
 
 # When using a subset of renderers, only these shaders are run, and they are many times and measure performance.
