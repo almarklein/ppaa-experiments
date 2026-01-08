@@ -73,7 +73,7 @@ oren = gfx.renderers.WgpuRenderer(ocan, pixel_scale=1, ppaa="none")
 ocan.request_draw(lambda: oren.render(scene, camera))
 
 # Create screenshots
-for scale_factor in (1, 2, 4):
+for scale_factor in (1, 2, 4, 8):
     fname = "sponza.png" if scale_factor == 1 else f"sponzax{scale_factor}.png"
     filename = os.path.abspath(os.path.join(__file__, "..", "..", "images_src", fname))
 

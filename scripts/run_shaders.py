@@ -17,7 +17,6 @@ from renderer_wgsl import WgslFullscreenRenderer
 
 
 src_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_src"))
-pre_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_pre"))
 all_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_all"))
 
 os.makedirs(all_images_dir, exist_ok=True)
@@ -56,6 +55,11 @@ class Renderer_ssaax2(SSAAFullScreenRenderer):
 class Renderer_ssaax4(SSAAFullScreenRenderer):
     # Note: 4 is the largest scale factor for which kernels are not truncated.
     TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 4}
+
+
+class Renderer_ssaax8(SSAAFullScreenRenderer):
+    # Note: not a great kernel, but *a lot* of pixels.
+    TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 8}
 
 
 # Upsampling
@@ -163,7 +167,7 @@ for fname in ["lines.png", "circles.png", "plot.png", "sponza.png", "synthetic.p
 
     # Hirez versions
     if fname not in ["synthetic.png"]:
-        for times in [2, 4]:
+        for times in [2, 4, 8]:
             fname = f"{name}x{times}.png"
             input_fname = os.path.join(src_images_dir, fname)
             output_fname = os.path.join(all_images_dir, fname)
@@ -180,16 +184,16 @@ benchmarks = {}
 # Default no subset
 exp_renderers = None
 
-exp_renderers = [
-    # Renderer_null,
-    Renderer_blur,
-    Renderer_ssaax2,
-    Renderer_ssaax4,
-    Renderer_fxaa3c,
-    Renderer_fxaa3d,
-    Renderer_ddaa1,
-    Renderer_ddaa2,
-]
+# exp_renderers = [
+#     # Renderer_null,
+#     Renderer_blur,
+#     Renderer_ssaax2,
+#     Renderer_ssaax4,
+#     Renderer_fxaa3c,
+#     Renderer_fxaa3d,
+#     Renderer_ddaa1,
+#     Renderer_ddaa2,
+# ]
 
 
 image_names = [
@@ -224,6 +228,7 @@ for Renderer in [
     # SSAA
     Renderer_ssaax2,
     Renderer_ssaax4,
+    Renderer_ssaax8,
     # PPAA
     Renderer_dlaa,
     Renderer_fxaa2,
