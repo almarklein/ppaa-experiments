@@ -44,12 +44,14 @@ Firstly, the direction of an edge is estimated and then diffused along the edge,
 thereby softening the edge's appearance without blurring it. Secondly, an
 edge-search walks horizontally or vertically along the gradient direction,
 computing a subpixel offset to produce a smooth gradient in long edges.
-
 The algorithm improves on the aforementioned techniques by a more accurate
 edge-angle measurement, maintaining small structures, and avoiding artifacts by
-performing a complete edge search. This makes it suitable for scientific
-visualizations such as plots. Furthermore, it introduces optimizations that
-allow it to outperform FXAA.
+performing a complete edge search.
+
+Quantitative and qualitative results show that DDAA produces better results,
+making it a suitable alternative, especially for scientific visualizations such
+as plots. Furthermore, it introduces optimizations that allow it to outperform
+FXAA.
 \end{abstract}
 
 
@@ -396,9 +398,68 @@ the luma values that are already known, thus saving two texture-fetches (one for
 %=========================================================================
 %=========================================================================
 
-\section{Results}
+\section{Algorithm results}
 
-The following section evaluates the proposed algorithm in terms of image quality and performance.
+The following sections evaluates the proposed algorithm in terms of quantitative
+errors, qualitative results, and performance.
+
+
+%=========================================================================
+
+\subsection{Quantitative comparisons}
+
+\subsubsection{Methods}
+
+In order to quantify the quality of the algorithms considered in this study,
+the result of each method was compared to a reference image.
+
+The most straightforward approach would be to compare the images directly to the
+result of e.g. an 8x SSAA method. However, it was found that this approach tends
+to favor blurry images, making the quantized errors ineffective for representing
+the quality of the PPAA methods.
+
+Therefore, each image obtained by the different PPAA methods was upscaled to 8 times the
+resolution, using a cubic Mitchel filter, so it was the same size as the
+reference image (which was generated at 8 times the normal resolution). Next,
+the peak signal-to-noise ratio (PSNR) was calculated from the image and the
+reference. The resulting values thus indicate how closely each image can be reconstructed
+relative to the reference image.
+
+Since there still appears to be a preference for blurry images,
+a 'blur' method was introduced for comparison, which performed a Gaussian blur with sigma 0.6.
+
+
+\subsubsection{Results}
+
+\begin{table}[tb]
+\small
+\begin{center}
+\begin{tabular}{r|r|r|r|r|r|r|r}
+\textbf{Image} & \textbf{ssaax4} & \textbf{ssaax2} & \textbf{blur} & \textbf{fxaa3c} & \textbf{fxaa3d} & \textbf{ddaa1} & \textbf{ddaa2} \\
+\hline
+lines & 17.2 & 16.3 & 15.2 & 15.1 & 14.8 & 15.4 & 15.4 \\
+circles & 22.6 & 21.5 & 18.8 & 18.9 & 18.7 & 18.6 & 18.8 \\
+plot & 23.6 & 23.5 & 22.4 & 22.7 & 22.7 & 23.7 & 23.2 \\
+sponza & 30.2 & 30.0 & 29.2 & 29.1 & 29.2 & 29.2 & 29.2 \\
+total & 23.4 & 22.8 & 21.4 & 21.4 & 21.4 & 21.7 & 21.7 \\
+\end{tabular}
+\end{center}
+\caption{The peak signal-to-noise ratio for the different PPAA methods (dB).}
+\label{tbl:psnr}
+\end{table}
+
+The results are shown in Table~\ref{tbl:psnr}. The numbers are all close
+together, but it can be observed how 'ssaax4' and 'ssaax2' consistently perform
+the best, while the 'blur' method acts as a baseline for a "poor" result.
+
+The 'fxaa' methods barely outperforms the 'blur' method; although they are less blurry, thet also introduce more artifacts.
+The 'ddaa' methods produces significantly better results, especially for the 'plot' example.
+The fact that 'ddaa2' performs less good on that example than 'ddaa1' can be explained because the
+lines of the axes are blurred in the presense of the tickmars, see Figure~TODO.
+
+Although these results suggest that the propsosed method is an improvement over existing methods, these numbers cannot
+show the advanatages of e.g. the edge search performed in 'fxaa3d' and 'ddaa2'; thorough qualitative comparisons are required too.
+
 
 %=========================================================================
 
@@ -410,12 +471,13 @@ The following section evaluates the proposed algorithm in terms of image quality
   \label{fig:compare8}
 \end{figure}
 
-\subsection{Quality}
+\subsection{Qualitative comparisons}
+
+\subsubsection{Methods}
 
 The goal of a PPAA algorithm is to reduce the effects of aliasing so the image is
-pleasing to the eye. To what degree this is successful (i.e. the
-quality) is hard to measure objectively. Instead, several negative effects
-that should be reduced and/or avoided are listed, and the visual results compared against this list.
+pleasing to the eye. To investigate whether this is successful, a selection of negative effects
+that should be reduced and/or avoided are listed. The visual results are then compared against this list.
 
 \begin{itemize}
 \item Jagged structures (mostly apparent in near-diagonal lines).
@@ -446,10 +508,10 @@ Finally, Figure~\ref{fig:small_structures} shows that the proposed algorithm avo
 
 %=========================================================================
 
-\subsection{Performance}
+\subsection{Performance comparisons}
 \label{sec:performance}
 
-\subsubsection{Method}
+\subsubsection{Methods}
 
 To measure the performance in terms of speed, benchmarks were performed on a
 range of different hardware, including integrated GPUs, Apple Silicon GPUs,
@@ -549,7 +611,9 @@ artifacts at diagonal edges, no excessive blurring, and maintaining small
 features. Its edge-search has less reach but does not skip pixels, thereby
 avoiding artifacts.
 
-The performance of DDAA is better or similar to FXAA, depending on the hardware.
+Quantitative and qualitative experiments demonstrate that DDAA produces better
+results than existing methods, and its performance is better or similar to FXAA, depending
+on the hardware.
 
 Together, these features make DDAA a promising option for real-time anti-aliasing,
 especially for scientific visualization and other rendering domains where
