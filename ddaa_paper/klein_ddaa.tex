@@ -24,7 +24,7 @@
 \author{Almar Klein\\Independent scholar}
 
 \teaser{
-  \includegraphics[width=0.8\textwidth]{images/teaser2.png}
+  \includegraphics[width=0.8\textwidth]{images/teaser.png}
   \caption{Result of applying DDAA to an example image.}
   \label{fig:teaser}
 }
@@ -165,7 +165,7 @@ falls below a threshold, then using the measured span to compute a subpixel
 offset so that the final sampled pixel corresponds with the reconstructed edge. The
 variable number of texture lookups results in some loss of performance, but it
 results in smooth transitions for edges that are nearly horizontal/vertical, as
-shown in Figure~\ref{fig:rear_car}. Improvements to this algorithm have also
+shown in Figure~\ref{fig:near_hori}. Improvements to this algorithm have also
 been proposed, e.g. adaptive approximate anti-aliasing (AXAA) \cite{axaa}.
 
 Table~\ref{tbl:the_algorithms} lists the different algorithms that are compared
@@ -174,11 +174,11 @@ simply blurs the image with a truncated Gaussian kernel.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\textwidth]{images/rear_car.png}
-  \caption{Comparison of the proposed algorithm (\texttt{ddaa2}), FXAA 3.11 console (\texttt{fxaa3c}), and
-      FXAA 3.11 desktop (\texttt{fxaa3d}) on an image containing near-horizontal lines.
-      The algorithms that include edge-search (\texttt{fxaa3d} and \texttt{ddaa2}) produce a smoother result.}
-  \label{fig:rear_car}
+  \includegraphics[width=\textwidth]{images/near_hori.png}
+  \caption{Comparison of different algorithms on an image containing near-horizontal lines.
+    The algorithms that include edge-search (\texttt{fxaa3d} and \texttt{ddaa2}) produce a notably smoother result.
+    Supersampling (\texttt{ssaax2}) does not help much to counter the staircase effect.}
+  \label{fig:near_hori}
 \end{figure}
 
 
@@ -348,7 +348,7 @@ to stipply artifacts. In natural images such cases are rare and the artifacts us
 not severe. However in artificial data, e.g. in scientific plots, such cases
 are much more likely to occur and the artifacts also more pronounced due to the high contrast.
 
-In Figure~\ref{fig:sample_skip_artifacts} the effect can be observed. It also
+In Figure~\ref{fig:tick_mark} the effect can be observed. It also
 shows how DDAA does not suffer from these artifacts; it consistently takes steps
 of 1 pixel, without skipping any.
 
@@ -362,11 +362,11 @@ pixels.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\textwidth]{images/sample_skip_artifacts.png}
+  \includegraphics[width=\textwidth]{images/tick_mark.png}
   \caption{Comparison of FXAA and DDAA on an image that contains two near-vertical lines, one of which has an obstruction to "end the edge".
   FXAA introduces artifacts because it skips pixels (i.e. misses the obstruction),
   while DDAA produces a clean albeit slightly shorter gradient.}
-  \label{fig:sample_skip_artifacts}
+  \label{fig:tick_mark}
 \end{figure}
 
 %=========================================================================
@@ -494,13 +494,13 @@ blurry like \texttt{fxaa3c}.
 
 It can also be seen that near-vertical and near-horizontal lines are smooth,
 albeit the length of the 'gradient' is slightly shorter than that of
-\texttt{fxaa3d}. In Figure~\ref{fig:sample_skip_artifacts} the gradients
+\texttt{fxaa3d}. In Figure~\ref{fig:tick_mark} the gradients
 can clearly be seen for a vertical line with an obstruction and one line without
 an obstruction. It shows that the proposed algorithm has a smooth gradient
 without artifacts. The gradient for \texttt{fxaa3d} is longer, but shows steps, and
 has gaps around the obstruction. This illustrates how the proposed algorithm
 exchanges a bit of edge-search distance for correctness.
-Figure~\ref{fig:rear_car} shows that the longer gradient of \texttt{fxaa3d}
+Figure~\ref{fig:near_hori} shows that the longer gradient of \texttt{fxaa3d}
 has a negligible effect.
 
 Finally, Figure~\ref{fig:small_structures} shows that the proposed algorithm avoids blurring away small/thin structures.
@@ -530,20 +530,20 @@ only copies the image.) The final result was calculated by taking the mean of th
 \begin{figure}[tb]
   \centering
   \begin{subfigure}[b]{0.4\textwidth}
-    \includegraphics[width=\textwidth]{images/circles.png}
-    \caption{circles.png}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.4\textwidth}
-    \includegraphics[width=\textwidth]{images/egypt.png}
-    \caption{egypt.png}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.45\textwidth}
     \includegraphics[width=\textwidth]{images/lines.png}
     \caption{lines.png}
   \end{subfigure}
+  \begin{subfigure}[b]{0.4\textwidth}
+    \includegraphics[width=\textwidth]{images/circles.png}
+    \caption{circles.png}
+  \end{subfigure}
   \begin{subfigure}[b]{0.45\textwidth}
-    \includegraphics[width=\textwidth]{images/synthetic.png}
-    \caption{synthetic.png}
+    \includegraphics[width=\textwidth]{images/plot.png}
+    \caption{plot.png}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{images/sponza.png}
+    \caption{sponza.png}
   \end{subfigure}
   \caption{The four test images used for visual comparison and benchmarking.}
   \label{fig:the4images}
