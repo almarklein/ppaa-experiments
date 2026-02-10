@@ -158,7 +158,14 @@ class Renderer_ddaa2(WgslFullscreenRenderer):
 
 # ---------------------------- Copy source images
 
-for fname in ["lines.png", "circles.png", "plot.png", "sponza.png", "synthetic.png"]:
+for fname in [
+    "lines.png",
+    "circles.png",
+    "plot.png",
+    "sponza.png",
+    "synthetic.png",
+    "animated.png",
+]:
     name = fname.rpartition(".")[0]
 
     input_fname = os.path.join(src_images_dir, fname)
@@ -275,6 +282,58 @@ for Renderer in [
             print("done")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
+
+
+# ----------------------------  Animated
+
+for Renderer in [
+    Renderer_null,
+    Renderer_blur,
+    # SSAA
+    Renderer_ssaax2,
+    Renderer_ssaax4,
+    Renderer_ssaax8,
+    # PPAA
+    Renderer_dlaa,
+    Renderer_fxaa2,
+    Renderer_fxaa3c,
+    Renderer_fxaa3d,
+    Renderer_ddaa1,
+    Renderer_ddaa2,
+]:
+    if exp_renderers:
+        continue  # skip when doing experiments
+    print(f"Animating with {Renderer.__name__}")
+    renderer = Renderer(adapter)
+    hirez_flag = ""
+    scale_factor = Renderer.TEMPLATE_VARS["scaleFactor"]
+    if issubclass(Renderer, WgslFullscreenRenderer) and scale_factor > 1:
+        hirez_flag = "x" + str(scale_factor).rstrip(".0")
+    shadername = renderer.SHADER.split(".")[0] + hirez_flag
+
+    name = "animated"
+    input_fname = os.path.join(all_images_dir, f"{name}{hirez_flag}.png")
+    output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")
+    print(f"    Generating {name} ({os.path.basename(output_fname)})")
+    print("    {img.n_frames} frames: ")
+    img = Image.open(input_fname)
+    assert img.is_animated
+
+    images = []
+    for frame_index in range(img.n_frames):
+        print(f"{frame_index}", end=" ")
+        img.seek(frame_index)
+        im1 = np.asarray(img.convert("RGBA")).copy()
+        assert im1.dtype == np.uint8
+        im1[:, :, 3] = 255  # set opaque, just in case
+
+        im2 = renderer.render(im1)
+        images.append(Image.fromarray(im2).convert("RGB"))
+    print("done")
+
+    # Write
+    main_image = images[0]
+    main_image.save(output_fname, append_images=images[1:], loop=0, duration=0.04)
 
 
 # ---------------------------- Upsampling
