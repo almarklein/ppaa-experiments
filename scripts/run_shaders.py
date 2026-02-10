@@ -283,6 +283,13 @@ for Renderer in [
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
 
+        # Also do ssaax2+ddaa2 (ddaa2p)
+        if Renderer is Renderer_ssaax2:
+            im2 = Renderer_ddaa2(adapter).render(im1)
+            im3 = renderer.render(im2)
+            alt_output_fname = os.path.join(all_images_dir, f"{name}_ddaa2p.png")
+            Image.fromarray(im3).convert("RGB").save(alt_output_fname)
+
 
 # ----------------------------  Animated
 
@@ -320,6 +327,7 @@ for Renderer in [
     assert img.is_animated
 
     images = []
+    images_ddaa2p = []
     for frame_index in range(img.n_frames):
         print(f"{frame_index}", end=" ")
         img.seek(frame_index)
@@ -329,11 +337,23 @@ for Renderer in [
 
         im2 = renderer.render(im1)
         images.append(Image.fromarray(im2).convert("RGB"))
+
+        if Renderer is Renderer_ssaax2:
+            im2 = Renderer_ddaa2(adapter).render(im1)
+            im3 = renderer.render(im2)
+            images_ddaa2p.append(Image.fromarray(im3).convert("RGB"))
+
     print("done")
 
     # Write
     main_image = images[0]
     main_image.save(output_fname, append_images=images[1:], loop=0, duration=0.04)
+
+    if images_ddaa2p:
+        alt_output_fname = os.path.join(all_images_dir, f"{name}_ddaa2p.png")
+        images_alt[0].save(
+            images_ddaa2p, append_images=images_ddaa2p[1:], loop=0, duration=0.04
+        )
 
 
 # ---------------------------- Upsampling
