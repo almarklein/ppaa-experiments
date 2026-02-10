@@ -48,7 +48,7 @@ The algorithm improves on the aforementioned techniques by a more accurate
 edge-angle measurement, maintaining small structures, and avoiding artifacts by
 performing a complete edge search.
 
-Quantitative and qualitative results show that DDAA produces better results,
+Quantitative and qualitative evaluation show that DDAA produces better results,
 making it a suitable alternative, especially for scientific visualizations such
 as plots. Furthermore, it introduces optimizations that allow it to outperform
 FXAA.
@@ -101,6 +101,15 @@ because renderers typically treat such fragments differently. E.g. transparent
 objects must typically be ordered from back to front to be rendered correctly.
 Therefore, this approach is prone to artifacts, especially in 3D scenes
 \cite{almarklein2025ordered2}.
+
+With Temporal Anti-Aliasing (TAA), multiple successive frames are considered to
+reduce aliasing in both the spatial and temporal dimensions
+\cite{yang2020survey}. This technique has gained popularity in modern games, but
+is also known to suffer from typical artifacts such as ghosting and blurring.
+Furthermore, this technique assumes a steady stream of images, which is not
+always the case for scientific visualizations. Sometimes there is just one frame,
+and new frames may only be rendered when the scene has changed. For this reason,
+the current study focuses on methods that only operate on the current frame.
 
 Post-Processing Anti-Aliasing (PPAA) algorithms attempt to reduce the aliasing
 effects on the image after it has been rendered, by subtly changing the values
@@ -398,10 +407,10 @@ the luma values that are already known, thus saving two texture-fetches (one for
 %=========================================================================
 %=========================================================================
 
-\section{Algorithm results}
+\section{Experiments}
 
-The following sections evaluates the proposed algorithm in terms of quantitative
-errors, qualitative results, and performance. All tests were based on the four test images shown in  Figure~\ref{fig:the4images}.
+The following subsections describe the experiments that were performed to evaluates the proposed algorithm in terms of quantitative
+errors, qualitative comparisons, temporal effects, and performance. All tests were based on the four test images shown in  Figure~\ref{fig:the4images}.
 
 \begin{figure}[tb]
   \centering
@@ -427,7 +436,7 @@ errors, qualitative results, and performance. All tests were based on the four t
 
 %=========================================================================
 
-\subsection{Quantitative comparisons}
+\subsection{Quantitative errors}
 
 \subsubsection{Methods}
 
@@ -484,6 +493,8 @@ show the advanatages of e.g. the edge search performed in 'fxaa3d' and 'ddaa2'; 
 
 %=========================================================================
 
+\subsection{Qualitative comparisons}
+
 \begin{figure}[tb]
   \centering
   \includegraphics[width=\textwidth]{images/compare8_lines.png}
@@ -512,7 +523,6 @@ show the advanatages of e.g. the edge search performed in 'fxaa3d' and 'ddaa2'; 
   \label{fig:compare8_plot}
 \end{figure}
 
-\subsection{Qualitative comparisons}
 
 \subsubsection{Methods}
 
@@ -547,9 +557,54 @@ poor, demonstrating hard to read text, marker edges that are badly visible at ce
 The \texttt{ddaa} algorithms looks better on all these aspects.
 
 
+
 %=========================================================================
 
-\subsection{Performance comparisons}
+\subsection{Temporal effects}
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\textwidth]{images/animated.png}
+  \caption{The image used to study temporal effects. The actual image is an animated png: the top-left cross rotates around it's center, the top-right
+  circles rotate around an off-center point, and the vertical lines slant back and forth.
+  See https://almarklein.github.io/ppaa-experiments/viewer.html#image=animated.png for the animated version.
+  }
+  \label{fig:animated}
+\end{figure}
+
+The current work is constrained to PPAA methods that operate on a single frame
+(i.e. excluding algorithms that use multiple successive frames), because it
+covers use-cases where only a single frame is available, or where there is not
+much motion, such as in scientific visualizations. Nevertheless, it's valuable
+to evauluate the results in use-cases where animations and motions are present.
+
+\subsubsection{Methods}
+
+An animated image was created, which can be seen (in static form) in
+Figure~\ref{fig:animated}. The image consists of 32 frames that form a loop,
+which is played at about 25 FPS, stored in an animated PNG file
+
+All considered algorithms are applied to each frame separately, after which the
+processed frames are saved in a new animated PNG file.
+
+The animations can visually compared in the available viewer application, where
+one can zoom in on certain regions to study the differences.
+
+\subsubsection{Results}
+
+The slanting lines demonstrate the clearest temporal artifacts, with visual 'jumps'
+occuring as the part of a line moves to the neighbouring pixel, also known as 'shimmering' or 'jitter'.
+
+As expected, the \texttt{ssaa} methods show a smaller (more fine-grained) jump.
+In the methods that apply edge-search, the jump is still visible, because the
+jump is present in the source image and the algorithm does not have access to
+information regarding the motion. However, the jump does appear smoother because
+it's 'smeared out' over a large (vertical) region.
+
+
+%=========================================================================
+
+\subsection{Performance}
 \label{sec:performance}
 
 \subsubsection{Methods}
@@ -617,6 +672,45 @@ and FXAA have similar performance.
 
 For the dedicated graphics cards (all Nvidia), DDAA performs
 either better or similar to FXAA, depending on the model.
+
+
+%=========================================================================
+%=========================================================================
+
+\section{Recommendations}
+
+The previous section shows that the proposed algorithm \texttt{ddaa2} is a
+suitable alternative for existing PPAA methods, especially on scientific images.
+The edge-search produces better results for certain artifacts than \texttt{ssaax2}.
+
+Although it is capable of softening temporal artifacts somewhat, motion artifacts
+can be considered it's main weakness (as for all PPAA methods).
+
+It can be observed that on HiDPI displays (which have 2 times the physical resolution as a normal display)
+the temporal artifacts are much less prominent, which can be expected since the images are rendered
+at twice the resolution, which is similar to what happes with \texttt{ssaax2}.
+
+This observation was the inspiration for an aproach that was adoped in the PyGfx render
+engine, and that can be recommended in cases where rendering at a high
+resolution can be afforded: if the screen is HiDPI, render to the native
+resolution and apply \texttt{ddaa2}. Otherwise, render to an offscreen texture
+that is twice the resolution, apply \texttt{ddaa2} and then render that to the
+native resolution using an appropriate downsample filter (e.g. Mitchell). This
+is effectively a combination of \texttt{ssaax2} and \texttt{ddaa2}.
+
+With this approach, the GPU load (and performance) are more or less
+indpendent on the kind of screen being used, and yields a comparable level of motion artifacts.
+
+To avoid complicating this work, this approach was not included as one
+of the methods compared in the experiments. But its result can be observed in
+the viewer application, where it is named \texttt{ddaa2p} ("p" for plus).
+There it can be seen that the temporal artifacts are at a level comparable with \texttt{ssaax4}.
+
+In heavy workloads where FPS matters more than motion artifacts (e.g. games),
+its recommended to render to native resolution (or half-resolution on HiDPI
+displays). Using temporal anti-aliasing methods are then better to aliviate motion artifacts.
+Nevertheless, the \textt{ddaa2} method can still be an interesting alternative,
+for performance or to avoid the artifacts specific to temporal methods (e.g. ghosting).
 
 
 %=========================================================================
