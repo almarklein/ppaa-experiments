@@ -165,7 +165,7 @@ falls below a threshold, then using the measured span to compute a subpixel
 offset so that the final sampled pixel corresponds with the reconstructed edge. The
 variable number of texture lookups results in some loss of performance, but it
 results in smooth transitions for edges that are nearly horizontal/vertical, as
-shown in Figure~\ref{fig:near_hori}. Improvements to this algorithm have also
+shown in Figure~\ref{fig:near_hori1}. Improvements to this algorithm have also
 been proposed, e.g. adaptive approximate anti-aliasing (AXAA) \cite{axaa}.
 
 Table~\ref{tbl:the_algorithms} lists the different algorithms that are compared
@@ -174,11 +174,11 @@ simply blurs the image with a truncated Gaussian kernel.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\textwidth]{images/near_hori.png}
-  \caption{Comparison of different algorithms on an image containing near-horizontal lines.
+  \includegraphics[width=\textwidth]{images/near_hori_sponza.png}
+  \caption{Comparison of different algorithms on an image containing multiple near-horizontal and near-vertical edges.
     The algorithms that include edge-search (\texttt{fxaa3d} and \texttt{ddaa2}) produce a notably smoother result.
-    Supersampling (\texttt{ssaax2}) does not help much to counter the staircase effect.}
-  \label{fig:near_hori}
+  }
+  \label{fig:near_hori1}
 \end{figure}
 
 
@@ -219,9 +219,9 @@ angles were compared with the reference angle to calculate the error. The
 results in Figure~\ref{fig:edge_angles} illustrate that the Scharr kernel \cite{jaehne1999filterdesign} performs much
 better than the Sobel operator. Errors in the
 measured angles result in excessive and angle-dependent blurring, as shown
-in the \textit{fxaa3c} panel in Figure~\ref{fig:circles_angle}. For this reason, the
+in the \texttt{fxaa3c} panel in Figure~\ref{fig:circles_angle}. For this reason, the
 proposed algorithm uses the Scharr kernel, resulting in a consistent smoothing, see
-the \textit{ddaa1} panel in Figure~\ref{fig:circles_angle}.
+the \texttt{ddaa1} panel in Figure~\ref{fig:circles_angle}.
 
 \begin{figure}[tb]
   \centering
@@ -326,8 +326,8 @@ comparing FXAA and DDAA is illustrated in Figure~\ref{fig:small_structures}.
 
 \subsection{Clean edge-search}
 
-During the edge-search, which is implemented in both FXAA ($fxaa3d$) and DDAA
-($ddaa2$), the algorithm walks vertically or horizontally along the edge,
+During the edge-search, which is implemented in both FXAA (\texttt{fxaa3d}) and DDAA
+(\texttt{ddaa2}), the algorithm walks vertically or horizontally along the edge,
 sampling outward in both directions until the end of the edge is detected.
 
 Since it is now known beforehand how many samples are required, the algorithm
@@ -356,7 +356,7 @@ While this strategy fixes this particular group of artifacts, it is also more
 costly. To compensate for that, DDAA uses a trick to take samples more
 efficiently, which is explained in the next section. Further, DDAA's edge-search
 is less long than that of FXAA; With the default configuration FXAA takes 12
-samples, reaching 26 pixels. The default configuration of $ddaa2$ reaches 15
+samples, reaching 26 pixels. The default configuration of \texttt{ddaa2} reaches 15
 pixels.
 
 
@@ -401,8 +401,29 @@ the luma values that are already known, thus saving two texture-fetches (one for
 \section{Algorithm results}
 
 The following sections evaluates the proposed algorithm in terms of quantitative
-errors, qualitative results, and performance.
+errors, qualitative results, and performance. All tests were based on the four test images shown in  Figure~\ref{fig:the4images}.
 
+\begin{figure}[tb]
+  \centering
+  \begin{subfigure}[b]{0.4\textwidth}
+    \includegraphics[width=\textwidth]{images/lines.png}
+    \caption{lines.png}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\textwidth}
+    \includegraphics[width=\textwidth]{images/circles.png}
+    \caption{circles.png}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{images/plot.png}
+    \caption{plot.png}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.45\textwidth}
+    \includegraphics[width=\textwidth]{images/sponza.png}
+    \caption{sponza.png}
+  \end{subfigure}
+  \caption{The four test images used for visual comparison and benchmarking.}
+  \label{fig:the4images}
+\end{figure}
 
 %=========================================================================
 
@@ -465,10 +486,30 @@ show the advanatages of e.g. the edge search performed in 'fxaa3d' and 'ddaa2'; 
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\textwidth]{images/compare8.png}
+  \includegraphics[width=\textwidth]{images/compare8_lines.png}
   \caption{Comparison of all considered PPAA algorithms on an image containing lines at different angles.
+  It can be seen that \texttt{ddaa2} produces the most consistent smoothness for different angles.
   }
-  \label{fig:compare8}
+  \label{fig:compare8_lines}
+\end{figure}
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\textwidth]{images/compare8_near_hori.png}
+  \caption{Comparison of all considered PPAA algorithms on an image containing near-horizontal lines and a few grids.
+  It can be seen that \texttt{fxaa3d} and \texttt{ddaa2} produce a smoother edge because of the edge-search.
+  The grids look clean for \texttt{ddaa2} while \texttt{fxaa3d} show artifacts.
+  }
+  \label{fig:compare8_near_hori}
+\end{figure}
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\textwidth]{images/compare8_plot.png}
+  \caption{Comparison of all considered PPAA algorithms on an image depicting a plot.
+  It can be seen that \texttt{dddaa2} shows clean text, crisp circles, and does not have the dotted artifacts that the \texttt{fxaa} algorithms suffer from because they skip pixels.
+  }
+  \label{fig:compare8_plot}
 \end{figure}
 
 \subsection{Qualitative comparisons}
@@ -488,22 +529,22 @@ that should be reduced and/or avoided are listed. The visual results are then co
 
 \subsubsection{Results}
 
-In Figure~\ref{fig:compare8} the proposed algorithm (\texttt{ddaa2}) is compared against other algorithms.
+In Figure~\ref{fig:compare8_lines} the proposed algorithm (\texttt{ddaa2}) is compared against other algorithms.
 It can be observed that the diagonal lines are less jagged than they are for \texttt{fxaa3d}, but also not
-blurry like \texttt{fxaa3c}.
-
-It can also be seen that near-vertical and near-horizontal lines are smooth,
+blurry like \texttt{fxaa3c}. It can also be seen that near-vertical and near-horizontal lines are smooth,
 albeit the length of the 'gradient' is slightly shorter than that of
-\texttt{fxaa3d}. In Figure~\ref{fig:tick_mark} the gradients
-can clearly be seen for a vertical line with an obstruction and one line without
-an obstruction. It shows that the proposed algorithm has a smooth gradient
-without artifacts. The gradient for \texttt{fxaa3d} is longer, but shows steps, and
-has gaps around the obstruction. This illustrates how the proposed algorithm
-exchanges a bit of edge-search distance for correctness.
-Figure~\ref{fig:near_hori} shows that the longer gradient of \texttt{fxaa3d}
-has a negligible effect.
+\texttt{fxaa3d}.
 
-Finally, Figure~\ref{fig:small_structures} shows that the proposed algorithm avoids blurring away small/thin structures.
+In Figure~\ref{fig:compare8_near_hori}, the algorithms that perform edge-search
+(\texttt{fxaa3d} and \texttt{ddaa2}) the near-horizontal edge is smoothed by a
+gradient. The gradient for \texttt{fxaa3d} is somewhat longer, but shows steps. This illustrates how the
+proposed algorithm exchanges a bit of edge-search distance for correctness.
+The same image also shows a fine grid, that has artifacts for the \texttt{fxaa} algorithms.
+The \texttt{ddaa} algorithms don't have these artifacts because they preserve small structures.
+
+In Figure~\ref{fig:compar8_plot}, a piece of the plot image is shown. The \texttt{fxaa} algorithms perform paticularly
+poor, demonstrating hard to read text, marker edges that are badly visible at certain angles, and stipple artifacts around tick marks.
+The \texttt{ddaa} algorithms looks better on all these aspects.
 
 
 %=========================================================================
@@ -526,28 +567,6 @@ were normalized by using the time for the "blur" algorithm as a reference.
 (Since its speed is in the same order of magnitude as the PPAA methods, using
 the blur shader as a reference yields more stable numbers than a shader that
 only copies the image.) The final result was calculated by taking the mean of the four test images shown in Figure~\ref{fig:the4images}.
-
-\begin{figure}[tb]
-  \centering
-  \begin{subfigure}[b]{0.4\textwidth}
-    \includegraphics[width=\textwidth]{images/lines.png}
-    \caption{lines.png}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.4\textwidth}
-    \includegraphics[width=\textwidth]{images/circles.png}
-    \caption{circles.png}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.45\textwidth}
-    \includegraphics[width=\textwidth]{images/plot.png}
-    \caption{plot.png}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.45\textwidth}
-    \includegraphics[width=\textwidth]{images/sponza.png}
-    \caption{sponza.png}
-  \end{subfigure}
-  \caption{The four test images used for visual comparison and benchmarking.}
-  \label{fig:the4images}
-\end{figure}
 
 
 \subsubsection{Results}
