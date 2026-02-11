@@ -24,6 +24,38 @@
             gap: 10px;
         }
 
+
+        #controls button,
+        #controls select {
+            padding: 4px 6px;
+            cursor: pointer;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdownContent {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 6px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1;
+        }
+
+        .dropdown.open .dropdownContent {
+            display: block;
+        }
+
+        label {
+            display: block;
+            white-space: nowrap;
+        }
+
         #container {
             flex: 1;
             display: grid;
@@ -69,6 +101,10 @@
     <div id="controls">
         <label for="imageSelect">Choose an image:</label>
         <select id="imageSelect"></select>
+        <div class="dropdown" id="algDropdown">
+            <button class="dropdownButton">Algorithms ⌵</button>
+            <div class="dropdownContent" id="algDropdownContent"></div>
+        </div>
         <button id="resetZoom">Reset Zoom</button>
         <button id="refreshImages" style="display: none;">Refresh Images</button>
     </div>
@@ -79,7 +115,8 @@
 
         const imageNames = ['lines.png', 'circles.png', 'plot.png', 'sponza.png', 'synthetic.png', 'animated.png'];
         const up_algorithms = ['up_nearest', 'up_tent', 'up_bspline', 'up_mitchell', 'up_catmull'];
-        const aa_algorithms = ['ori', 'ssaax4', 'ssaax2', 'fxaa3d', 'ddaa2'];
+        const aa_algorithms = ['ori', 'ssaax4', 'ssaax2', 'fxaa3d', 'ddaa2', 'ddaa2p'];
+        const all_algorithms = aa_algorithms.concat(up_algorithms);
         const pageIsLocal = window.location.protocol === 'file:'
 
         // State
@@ -94,6 +131,7 @@
 
         const container = document.getElementById('container');
         const imgSelect = document.getElementById('imageSelect');
+        const algDropdown = document.getElementById("algDropdown");
         const resetButton = document.getElementById('resetZoom');
         const refreshButton = document.getElementById('refreshImages');
 
@@ -109,19 +147,86 @@
             imgSelect.appendChild(option);
         });
 
+        const algCheckboxes = {};
+        all_algorithms.forEach(name => {
+            const label = document.createElement("label");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+
+            checkbox.addEventListener("change", () => {
+                let algs = [...algorithms];
+                if (checkbox.checked) {
+                    if (!algs.includes(name)) {
+                        algs.push(name);
+                    }
+                } else {
+                    algs = algs.filter(item => item !== name);
+                }
+                setAlgorithms(algs);
+            });
+
+            algCheckboxes[name] = checkbox;
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(" " + name));
+            document.getElementById("algDropdownContent").appendChild(label);
+        });
+
+        // State updaters
+
+        function setAlgorithms(newAlgorithms) {
+            if (!arraysEqual(algorithms, newAlgorithms)) {
+                algorithms = newAlgorithms;
+                updateHash();
+                createPanels();
+                all_algorithms.forEach(name => {
+                    let checkbox = algCheckboxes[name];
+                    checkbox.checked = algorithms.includes(name);
+                });
+            }
+        }
+
+        function setImageName(newImageName) {
+            if (imageName != newImageName) {
+                imageName = newImageName;
+                updateHash();
+                createPanels();
+                imgSelect.value = imageName;
+            }
+        }
+
+        function setNColumns(newNColumns) {
+            if (nColumns != newNColumns) {
+                nColumns = newNColumns;
+                updateHash();
+                createPanels();
+            }
+        }
+
         // Handlers
 
         refreshButton.addEventListener('click', refreshImages);
         resetButton.addEventListener('click', resetTransforms);
-        imgSelect.addEventListener('change', () => updateHash(imgSelect.value, algorithms));
+        imgSelect.addEventListener('change', () => setImageName(imgSelect.value));
+
+        // Toggle dropdown
+        algDropdown.querySelector(".dropdownButton").onclick = () => {
+            algDropdown.classList.toggle("open");
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", e => {
+            if (!algDropdown.contains(e.target)) {
+                algDropdown.classList.remove("open");
+            }
+        });
 
         window.addEventListener('hashchange', handleHashChange);
         window.addEventListener('load', handleHashChange);
 
         // Functions
 
-        function updateHash(img, algs) {
-            let hash = "image=" + img + "&algs=" + algs.join(",");
+        function updateHash() {
+            let hash = "image=" + imageName + "&algs=" + algorithms.join(",");
             if (nColumns > 0) {
                 hash += "&ncols=" + nColumns;
             }
@@ -136,38 +241,16 @@
             let ncols = Math.floor(Number(params.get("ncols")) || 0);
             algs = algs.filter(str => str !== "");
 
-            // Reset?
-            let need_reset = false;
             if (img.length == 0) {
                 img = imageNames[0];
-                need_reset = true;
             }
             if (algs.length == 0) {
                 algs = aa_algorithms;
-                need_reset = true;
             }
 
-            // Update?
-            let need_create_panels = false;
-            if (imageName != img) {
-                imageName = img;
-                need_create_panels = true;
-            }
-            if (!arraysEqual(algorithms, algs)) {
-                algorithms = algs;
-                need_create_panels = true;
-            }
-            if (nColumns != ncols) {
-                nColumns = ncols;
-                need_create_panels = true;
-                if (ncols == 0) {
-                    need_reset = true;
-                }
-            }
-
-            if (need_reset) { window.setTimeout(() => updateHash(img, algs), 0); }
-            if (need_create_panels) { createPanels(); }
-
+            setImageName(img);
+            setAlgorithms(algs);
+            setNColumns(ncols);
         }
 
         function arraysEqual(a, b) {
