@@ -210,9 +210,9 @@ used derivative kernel is the Sobel operator. However, it has been shown that th
 is not directionally invariant, and better kernels exist
 \cite{jaehne1999filterdesign,kroon2009}.
 
-An experiment was performed, applying different kernels to estimate
-the angle of an edge in an image containing a line at a known angle. The measured
-angles were compared with the reference angle to calculate the error. The
+We performed an experiment, applying different kernels to estimate
+the angle of an edge in an image containing a line at a known angle. We then compared the measured
+angles with the reference angle to calculate the error. The
 results in Figure~\ref{fig:edge_angles} illustrate that the Scharr kernel \cite{jaehne1999filterdesign} performs much
 better than the Sobel operator. Errors in the
 measured angles result in excessive and angle-dependent blurring, as shown
@@ -436,14 +436,14 @@ errors, qualitative comparisons, temporal effects, and performance. All tests we
 \subsubsection{Methods}
 
 In order to quantify the quality of the algorithms considered in this study,
-the result of each method was compared to a reference image.
+we compared the result of each method to a reference image.
 
 The most straightforward approach would be to compare the images directly to the
 result of e.g. an 8x SSAA method. However, it was found that this approach tends
 to favor blurry images, making the quantized errors ineffective for representing
 the quality of the PPAA methods.
 
-Therefore, each image obtained by the different PPAA methods was upscaled to 8 times the
+Therefore, we upscaled each image (obtained by the different PPAA methods) to 8 times the
 resolution, using a cubic Mitchel filter, so it was the same size as the
 reference image (which was generated at 8 times the normal resolution). Next,
 the peak signal-to-noise ratio (PSNR) was calculated from the image and the
@@ -451,7 +451,7 @@ reference. The resulting values thus indicate how closely each image can be reco
 relative to the reference image.
 
 Since there still appears to be a preference for blurry images,
-a 'blur' method was introduced for comparison, which performed a Gaussian blur with sigma 0.6.
+the 'blur' method was included for comparison, which performed a Gaussian blur with sigma 0.6.
 
 
 \subsubsection{Results}
@@ -462,11 +462,11 @@ a 'blur' method was introduced for comparison, which performed a Gaussian blur w
 \begin{tabular}{r|r|r|r|r|r|r|r}
 \textbf{Image} & \textbf{ssaax4} & \textbf{ssaax2} & \textbf{blur} & \textbf{fxaa3c} & \textbf{fxaa3d} & \textbf{ddaa1} & \textbf{ddaa2} \\
 \hline
-lines & 17.2 & 16.3 & 15.2 & 15.1 & 14.8 & 15.4 & 15.4 \\
-circles & 22.6 & 21.5 & 18.8 & 18.9 & 18.7 & 18.6 & 18.8 \\
+lines & 17.3 & 17.2 & 16.2 & 16.2 & 16.0 & 17.1 & 16.9 \\
+circles & 22.5 & 22.4 & 21.3 & 21.6 & 21.8 & 22.3 & 22.2 \\
 plot & 23.6 & 23.5 & 22.4 & 22.7 & 22.7 & 23.7 & 23.2 \\
 sponza & 30.2 & 30.0 & 29.2 & 29.1 & 29.2 & 29.2 & 29.2 \\
-total & 23.4 & 22.8 & 21.4 & 21.4 & 21.4 & 21.7 & 21.7 \\
+total & 23.4 & 23.3 & 22.3 & 22.4 & 22.4 & 23.1 & 22.9 \\
 \end{tabular}
 \end{center}
 \caption{The peak signal-to-noise ratio for the different PPAA methods (dB).}
@@ -474,16 +474,16 @@ total & 23.4 & 22.8 & 21.4 & 21.4 & 21.4 & 21.7 & 21.7 \\
 \end{table}
 
 The results are shown in Table~\ref{tbl:psnr}. The numbers are all close
-together, but it can be observed how 'ssaax4' and 'ssaax2' consistently perform
-the best, while the 'blur' method acts as a baseline for a "poor" result.
+together, but it can be observed how \texttt{ssaax4} and \texttt{ssaax2} consistently perform
+the best, while the \texttt{blur} method acts as a baseline for a "poor" result.
 
-The 'fxaa' methods barely outperforms the 'blur' method; although they are less blurry, thet also introduce more artifacts.
-The 'ddaa' methods produces significantly better results, especially for the 'plot' example.
-The fact that 'ddaa2' performs less good on that example than 'ddaa1' can be explained because the
-lines of the axes are blurred in the presense of the tickmars, see Figure~TODO.
+The \texttt{fxaa} methods barely outperforms the \texttt{blur} method; although they are less blurry, they also introduce more artifacts.
+The \texttt{ddaa} methods produces significantly better results, especially for the 'line' and 'plot' images.
 
-Although these results suggest that the propsosed method is an improvement over existing methods, these numbers cannot
-show the advanatages of e.g. the edge search performed in 'fxaa3d' and 'ddaa2'; thorough qualitative comparisons are required too.
+Interestingly, the \texttt{ddaa1} method outperforms \texttt{ddaa2} on most
+images. It appears that these measurements do not capture the advantages of the
+edge search performed in \texttt{fxaa3d} and \texttt{ddaa2}; to evaluate the proposed algorithm, we also need thorough
+qualitative comparisons.
 
 
 %=========================================================================
@@ -589,7 +589,7 @@ to evauluate the results in use-cases where animations and motions are present.
 
 \subsubsection{Methods}
 
-An animated image was created, which can be seen (in static form) in
+We created an animated image, which can be seen (in static form) in
 Figure~\ref{fig:animated}. The image consists of 32 frames that form a loop,
 which is played at about 25 FPS, stored in an animated PNG file
 
@@ -610,6 +610,10 @@ jump is present in the source image and the algorithm does not have access to
 information regarding the motion. However, the jump does appear smoother because
 it's 'smeared out' over a large (vertical) region.
 
+The \texttt{fxaa} methods show a clear shimmering effect for the thin-lined cross and the thin (inner) circle.
+This can be attributed to the inconsistent smoothing. In the \texttt{ddaa} methods, with their improved
+angle measurement, this effect is much less prominent.
+
 
 %=========================================================================
 
@@ -618,7 +622,7 @@ it's 'smeared out' over a large (vertical) region.
 
 \subsubsection{Methods}
 
-To measure the performance in terms of speed, benchmarks were performed on a
+To measure the performance in terms of speed, we performed benchmarks on a
 range of different hardware, including integrated GPUs, Apple Silicon GPUs,
 and dedicated GPUs.
 
@@ -710,10 +714,12 @@ is effectively a combination of \texttt{ssaax2} and \texttt{ddaa2}.
 With this approach, the GPU load (and performance) are more or less
 indpendent on the kind of screen being used, and yields a comparable level of motion artifacts.
 
-To avoid complicating this work, this approach was not included as one
-of the methods compared in the experiments. But its result can be observed in
-the viewer application, where it is named \texttt{ddaa2p} ("p" for plus).
-There it can be seen that the temporal artifacts are at a level comparable with \texttt{ssaax4}.
+To avoid complicating this work, this approach was not included as one of the
+methods compared in the experiments. But its result can be observed in the
+viewer application, where it is named \texttt{ddaa2p} ("p" for plus). In all
+images it demonstrates a suprior quality,  comparable with \texttt{ssaax4}.
+Particularly in the animation, it can be seen that the temporal artifacts are
+much less prominent than the other algorithms.
 
 In heavy workloads where FPS matters more than motion artifacts (e.g. games),
 it is recommended to render to native resolution (or half-resolution on HiDPI
