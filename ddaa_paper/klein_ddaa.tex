@@ -68,20 +68,11 @@ FXAA.
 The most effective way to reduce aliasing effects in rendered images is
 Super-Sample Anti-Aliasing (SSAA), in which the image is rendered at a higher
 resolution than the final resolution, and then downsampled with an appropriate
-filter (see Figure~\ref{fig:ssaa} for an example). However, in real-time
+filter. However, in real-time
 rendering, the larger number of pixels impacts fragment shader
 performance, as well as memory usage. This makes SSAA with large sampling
 factors impractical, while smaller factors (e.g. $<= 2$) are less
 effective at countering aliasing.
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=\textwidth]{images/circles_ssaa.png}
-  \caption{Comparison of SSAA with sampling factors 2 (4x pixels), and 4 (8x pixels).
-  Higher sampling factors improve quality, but significantly increase computational cost due to the
-  larger pixel count and the need for wide downsampling filters.}
-  \label{fig:ssaa}
-\end{figure}
 
 The Multi-Sample Anti-Aliasing (MSAA) method addresses the performance problem
 by storing multiple samples at mesh edges, without significantly increasing
@@ -104,12 +95,13 @@ Therefore, this approach is prone to artifacts, especially in 3D scenes
 
 With Temporal Anti-Aliasing (TAA), multiple successive frames are considered to
 reduce aliasing in both the spatial and temporal dimensions
-\cite{yang2020survey}. This technique has gained popularity in modern games, but
-is also known to suffer from typical artifacts such as ghosting and blurring.
-Furthermore, this technique assumes a steady stream of images, which is not
-always the case for scientific visualizations. Sometimes there is just one frame,
-and new frames may only be rendered when the scene has changed. For this reason,
-the current study focuses on methods that only operate on the current frame.
+\cite{yang2020survey, Karis2014TemporalAA}. This technique has gained popularity
+in modern games, but is also known to suffer from typical artifacts such as
+ghosting and smearing. Furthermore, this technique assumes a steady stream of
+images, which is not always the case for scientific visualizations. Sometimes
+there is just one frame, or new frames may only be rendered when the scene has
+changed. For these reasons, the current study focuses on methods that only operate
+on the current frame.
 
 Post-Processing Anti-Aliasing (PPAA) algorithms attempt to reduce the aliasing
 effects on the image after it has been rendered, by subtly changing the values
@@ -121,10 +113,6 @@ occurred, so artifacts can not always be \textit{removed}, but rather their
 appearance can be \textit{softened}. Similarly, while individual frames can look
 good, a stream of images can have temporal artifacts as boundaries shift from
 one pixel to another.
-
-To mitigate these downsides, PPAA can be combined with SSAA, by rendering at a slightly higher
-resolution (e.g. 1.5 or 2.0), then apply PPAA, and then downsample to the final
-resolution.
 
 In the present work, a novel PPAA algorithm is presented, with several benefits
 compared to existing methods.
@@ -242,15 +230,12 @@ the \texttt{ddaa1} panel in Figure~\ref{fig:circles_angle}.
   \label{fig:edge_angles}
 \end{figure}
 
-To perform diffusion (i.e. smoothing) in a particular direction, an elongated kernel
-should be used. In practice, a few (bilinearly interpolated) samples are taken that lie on a line.
-The proposed method uses just two samples, whose distance is larger if more smoothing is required.
-Their maximum distance from the center is such that the
-contribution of the center pixel is still the largest. For a horizontal line that distance would be 0.66 pixels.
-However, if the diagonal case is considered, an interesting effect occurs. As shown in Figure~\ref{fig:diffuse_samples},
-if the sample is taken at the position where the 4 pixels meet, their contribution would be equal, which would cause a
-significant amount of blur. To reduce this effect, a maximum distance of 0.5 pixels is used instead (indicated by the dot).
-
+To perform diffusion (i.e. smoothing) in a particular direction, an elongated
+kernel should be used. In practice, two (bilinearly interpolated) samples are
+taken that lie on a line. A larger distance between the samples results in more
+diffusion, The maximum distance from the center is such that the contribution of
+the center pixel is the largest, and that the contribution of neighboring pixels
+does not lead to excessive blurring. See Figure~\ref{fig:diffuse_samples}.
 
 \begin{figure}[tb]
   \centering
@@ -266,11 +251,12 @@ significant amount of blur. To reduce this effect, a maximum distance of 0.5 pix
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.3\textwidth]{images/diffuse_3x3.png}
-  \caption{Illustration of the sample location for maximum diffusion for a
-  diagonal and horizontal edge. The center square represents the pixel being
-  evaluated. The blue dots represent a distance of 0.5 pixels from the center. A
-  larger value, like $\sqrt{2}$ would for diagonal lines put the sample point at
-  the point where 4 pixels meet, resulting in an overly blurry result.}
+  \caption{Illustration of the directional diffusion of a single pixel. Exactly
+  2 samples are taken, on opposite sides from the center pixel, and no further
+  than 0.5 pixel distance from the center, i.e. inside the large gray circle.
+  The blue line and dots indicate a maximum diagonal diffusion. Using a larger
+  distance, such as $\sqrt{2}$, would for diagonal lines put each sample right
+  in between 4 pixels, which would result in an overly blurry result.}
   \label{fig:diffuse_samples}
 \end{figure}
 
@@ -396,6 +382,7 @@ increasingly likely to take more samples than needed.
 A good value for the number of samples per batch was determined empirically, using
 the same hardware as in Section~\ref{sec:performance}. The details of these experiments are out
 of scope for the current paper, but they suggested that a value of 3 is appropriate.
+See Listing~\ref{lst:threesamples} for an example.
 
 It is worth mentioning that FXAA does not include this optimization because
 sampling with an integer offset was not yet available at the time.
@@ -404,10 +391,18 @@ Another small optimization is possible by calculating the first edge-search samp
 the luma values that are already known, thus saving two texture-fetches (one for each direction).
 
 
+\begin{lstlisting}[float, label={lst:threesamples}, caption={Pseudo-code to take 3 horizontal samples in a way that allows the compiler to optimize. The real code can be found at https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl.}]
+    v1 = textureSampleLevel(tex, smp, currentUv, 0.0, vec2i(-1, 0)).rgb;
+    v2 = textureSampleLevel(tex, smp, currentUv, 0.0, vec2i( 0, 0)).rgb;
+    v3 = textureSampleLevel(tex, smp, currentUv, 0.0, vec2i( 1, 0)).rgb;
+\end{lstlisting}
+
+
+
 %=========================================================================
 %=========================================================================
 
-\section{Experiments}
+\section{Evaluation}
 
 The following subsections describe the experiments that were performed to evaluates the proposed algorithm in terms of quantitative
 errors, qualitative comparisons, temporal effects, and performance. All tests were based on the four test images shown in  Figure~\ref{fig:the4images}.
@@ -523,6 +518,15 @@ show the advanatages of e.g. the edge search performed in 'fxaa3d' and 'ddaa2'; 
   \label{fig:compare8_plot}
 \end{figure}
 
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=\textwidth]{images/compare8_circles.png}
+  \caption{Comparison of all considered PPAA algorithms on an image depicting circles.
+  It can be seen that the \texttt{ddaa2} method has the most uniform diffusion (independent ot the angle of the line),
+  that thin lines are not diminished.
+  }
+  \label{fig:compare8_plot}
+\end{figure}
 
 \subsubsection{Methods}
 
@@ -552,10 +556,15 @@ proposed algorithm exchanges a bit of edge-search distance for correctness.
 The same image also shows a fine grid, that has artifacts for the \texttt{fxaa} algorithms.
 The \texttt{ddaa} algorithms don't have these artifacts because they preserve small structures.
 
-In Figure~\ref{fig:compar8_plot}, a piece of the plot image is shown. The \texttt{fxaa} algorithms perform paticularly
+In Figure~\ref{fig:compare8_plot}, a piece of the plot image is shown. The \texttt{fxaa} algorithms perform paticularly
 poor, demonstrating hard to read text, marker edges that are badly visible at certain angles, and stipple artifacts around tick marks.
 The \texttt{ddaa} algorithms looks better on all these aspects.
 
+In Figure~\ref{fig:compare8_circles}, a few coloured circles are depicted. The figure shows that going around a circle, the \texttt{ddaa2} method has the most uniform amount of blur.
+It also looks closest to the \texttt{ssaax4} (which can be considered a reference). In contrast \texttt{fxaa3c} is more similar to the \texttt{blur} method and \texttt{fxaa3d} diminishes thin lines.
+When other circles in the image are examined (not shown in Figure~\ref{fig:compare8_circles}) it can be seen that some circles are not diffused by any of the PPAA methods. This is because
+these methods convert RGB colors to a scalar luma value, and the luma of certain colors is so close to the luma of the background, that the contrast falls below the algorithms threshold. This
+is an intrisic limitation of most PPAA methods, which is not easy to overcome due to limited availability of registers in a shader program.
 
 
 %=========================================================================
@@ -564,10 +573,10 @@ The \texttt{ddaa} algorithms looks better on all these aspects.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=\textwidth]{images/animated.png}
+  \includegraphics[width=0.4\textwidth]{images/animated.png}
   \caption{The image used to study temporal effects. The actual image is an animated png: the top-left cross rotates around it's center, the top-right
   circles rotate around an off-center point, and the vertical lines slant back and forth.
-  See https://almarklein.github.io/ppaa-experiments/viewer.html#image=animated.png for the animated version.
+  See https://almarklein.github.io/ppaa-experiments/viewer.html\#image=animated.png for the animated version.
   }
   \label{fig:animated}
 \end{figure}
@@ -677,7 +686,7 @@ either better or similar to FXAA, depending on the model.
 %=========================================================================
 %=========================================================================
 
-\section{Recommendations}
+\section{Discussion and recommendations}
 
 The previous section shows that the proposed algorithm \texttt{ddaa2} is a
 suitable alternative for existing PPAA methods, especially on scientific images.
@@ -707,10 +716,11 @@ the viewer application, where it is named \texttt{ddaa2p} ("p" for plus).
 There it can be seen that the temporal artifacts are at a level comparable with \texttt{ssaax4}.
 
 In heavy workloads where FPS matters more than motion artifacts (e.g. games),
-its recommended to render to native resolution (or half-resolution on HiDPI
-displays). Using temporal anti-aliasing methods are then better to aliviate motion artifacts.
-Nevertheless, the \textt{ddaa2} method can still be an interesting alternative,
-for performance or to avoid the artifacts specific to temporal methods (e.g. ghosting).
+it is recommended to render to native resolution (or half-resolution on HiDPI
+displays). Using temporal anti-aliasing methods are then preferred to aliviate motion artifacts.
+Although the \texttt{ddaa2} method can still be an interesting alternative,
+for performance, to avoid the artifacts specific to temporal methods (e.g. ghosting),
+or simply because the method is easy to adopt.
 
 
 %=========================================================================
