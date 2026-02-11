@@ -107,6 +107,7 @@
         </div>
         <button id="resetZoom">Reset Zoom</button>
         <button id="refreshImages" style="display: none;">Refresh Images</button>
+        <button id="swapAlgorithms">Swap last 2 algorithms</button>
     </div>
     <div id="container"></div>
 
@@ -134,6 +135,7 @@
         const algDropdown = document.getElementById("algDropdown");
         const resetButton = document.getElementById('resetZoom');
         const refreshButton = document.getElementById('refreshImages');
+        const swapButton = document.getElementById('swapAlgorithms');
 
         // Tweak / fill DOm elements
         if (pageIsLocal) {
@@ -190,6 +192,7 @@
                 imageName = newImageName;
                 updateHash();
                 createPanels();
+                resetTransforms();
                 imgSelect.value = imageName;
             }
         }
@@ -205,6 +208,7 @@
         // Handlers
 
         refreshButton.addEventListener('click', refreshImages);
+        swapButton.addEventListener('click', () => { let n = algorithms.length; setAlgorithms([...algorithms.slice(0, n - 2), algorithms[n - 1], algorithms[n - 2]]); });
         resetButton.addEventListener('click', resetTransforms);
         imgSelect.addEventListener('change', () => setImageName(imgSelect.value));
 
@@ -297,8 +301,8 @@
                 panel.appendChild(lbl);
                 container.appendChild(panel);
             });
-            resetTransforms();
-            refreshImages();
+            updateTransforms();
+            window.setTimeout(updateTransforms, 100);
         }
 
         function resetTransforms() {
