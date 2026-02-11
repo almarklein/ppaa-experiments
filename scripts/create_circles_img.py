@@ -8,6 +8,7 @@ import os
 import webbrowser  # noqa
 
 from PIL import Image, ImageDraw
+import aggdraw
 
 
 SCALE_FACTOR = 1
@@ -18,22 +19,28 @@ background_color = (255, 255, 255)
 
 # Create a blank image
 img = Image.new("RGB", (width * SCALE_FACTOR, height * SCALE_FACTOR), background_color)
-draw = ImageDraw.Draw(img)
+draw = aggdraw.Draw(img)  # like ImageDraw.Draw(img), but with subpixel support
+draw.setantialias(False)  # but disable aa!
 
 
 def draw_rectangle(xyxy, fill):
     xyxy = tuple(i * SCALE_FACTOR for i in xyxy)
-    draw.rectangle(xyxy, fill=fill)
+    draw.rectangle(xyxy, None, aggdraw.Brush(fill))
 
 
 def draw_circle(center, line_color):
     center = SCALE_FACTOR * center[0], SCALE_FACTOR * center[1]
-    radius1, width1 = 30 * SCALE_FACTOR, 4 * SCALE_FACTOR
-    radius2, width2 = 20 * SCALE_FACTOR, 1 * SCALE_FACTOR
-    radius3 = 10 * SCALE_FACTOR
-    draw.circle(center, outline=line_color, radius=radius1, width=width1)
-    draw.circle(center, outline=line_color, radius=radius2, width=width2)
-    draw.circle(center, fill=line_color, radius=radius3)
+    r1, width1 = 30 * SCALE_FACTOR, 4 * SCALE_FACTOR
+    r2, width2 = 20 * SCALE_FACTOR, 1 * SCALE_FACTOR
+    r3 = 10 * SCALE_FACTOR
+
+    coords1 = center[0] - r1, center[1] - r1, center[0]+r1, center[1]+r1
+    coords2 = center[0] - r2, center[1] - r2, center[0]+r2, center[1]+r2
+    coords3 = center[0] - r3, center[1] - r3, center[0]+r3, center[1]+r3
+
+    draw.ellipse(coords1, aggdraw.Pen(line_color, width1))
+    draw.ellipse(coords2, aggdraw.Pen(line_color, width2))
+    draw.ellipse(coords3, None, aggdraw.Brush(line_color))
 
 
 def draw_circles(center):
@@ -68,6 +75,7 @@ else:
     fname = f"circlesx{SCALE_FACTOR}.png"
 
 # Save
+draw.flush()
 filename = os.path.abspath(os.path.join(__file__, "..", "..", "images_src", fname))
 img.save(filename)
 print(f"Image saved as '{fname}'")

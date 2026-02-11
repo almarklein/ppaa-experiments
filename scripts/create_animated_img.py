@@ -7,6 +7,7 @@ import math
 import webbrowser  # noqa
 
 from PIL import Image, ImageDraw
+import aggdraw
 
 
 SCALE_FACTOR = 1
@@ -20,10 +21,11 @@ line_color = (0, 0, 0)
 def draw_star(draw, center, radius, count, line_width, angle=0):
     cx, cy = center[0] * SCALE_FACTOR, center[1] * SCALE_FACTOR
     radius = radius * SCALE_FACTOR
-    line_width = line_width * SCALE_FACTOR
 
     angle_offset = angle
     angle_step = math.pi / count
+
+    pen = aggdraw.Pen(line_color, line_width * SCALE_FACTOR)
 
     for i in range(count):
         angle = angle_offset + i * angle_step
@@ -33,24 +35,25 @@ def draw_star(draw, center, radius, count, line_width, angle=0):
         y1 = cy - dy
         x2 = cx + dx
         y2 = cy + dy
-        draw.line((x1, y1, x2, y2), fill=line_color, width=line_width)
+        draw.line((x1, y1, x2, y2), pen)
 
 
 def draw_circles(draw, center, radius, line_width, angle=0):
     cx, cy = center[0] * SCALE_FACTOR, center[1] * SCALE_FACTOR
     radius = radius * SCALE_FACTOR
-    line_width = line_width * SCALE_FACTOR
 
-    cx += 10 * math.cos(angle)
-    cy += 10 * math.sin(angle)
+    pen = aggdraw.Pen(line_color, line_width * SCALE_FACTOR)
+
+    cx += 10 * SCALE_FACTOR * math.cos(angle)
+    cy += 10 * SCALE_FACTOR * math.sin(angle)
 
     radius += 10 * SCALE_FACTOR
     bbox = [cx - radius, cy - radius, cx + radius, cy + radius]
-    draw.ellipse(bbox, outline=line_color, width=line_width)
+    draw.ellipse(bbox, pen)
 
 
 def draw_fan(draw, x, y, line_width=1, distance=10, slant=0):
-    line_width = line_width * SCALE_FACTOR
+    pen = aggdraw.Pen(line_color, line_width * SCALE_FACTOR)
 
     for i, factor in enumerate((0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9)):
         x1 = x + i * distance
@@ -64,7 +67,7 @@ def draw_fan(draw, x, y, line_width=1, distance=10, slant=0):
             y1 * SCALE_FACTOR,
             y2 * SCALE_FACTOR,
         )
-        draw.line((x1, y1, x2, y2), fill=line_color, width=line_width)
+        draw.line((x1, y1, x2, y2), pen)
 
 
 def draw_frame(draw, t):
@@ -96,8 +99,10 @@ for i in range(N):
         "RGB", (width * SCALE_FACTOR, height * SCALE_FACTOR), background_color
     )
     images.append(img)
-    draw = ImageDraw.Draw(img)
+    draw = aggdraw.Draw(img)
+    draw.setantialias(False)
     draw_frame(draw, i / N)
+    draw.flush()
 
 
 if SCALE_FACTOR == 1:

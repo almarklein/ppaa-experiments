@@ -11,6 +11,7 @@ import math
 import webbrowser  # noqa
 
 from PIL import Image, ImageDraw
+import aggdraw
 
 
 SCALE_FACTOR = 1
@@ -22,16 +23,17 @@ line_color = (0, 0, 0)
 
 # Create a blank image
 img = Image.new("RGB", (width * SCALE_FACTOR, height * SCALE_FACTOR), background_color)
-draw = ImageDraw.Draw(img)
+draw = aggdraw.Draw(img)  # like ImageDraw.Draw(img), but with subpixel support
+draw.setantialias(False)  # but disable aa!
 
 
 def draw_star(draw, center, radius, count, line_width, circle_width):
     cx, cy = center[0] * SCALE_FACTOR, center[1] * SCALE_FACTOR
     radius = radius * SCALE_FACTOR
-    line_width = line_width * SCALE_FACTOR
-    circle_width = circle_width * SCALE_FACTOR
-
     angle_step = math.pi / count
+
+    line_pen = aggdraw.Pen(line_color, line_width * SCALE_FACTOR)
+    circle_pen = aggdraw.Pen(line_color, circle_width * SCALE_FACTOR)
 
     for i in range(count):
         angle = i * angle_step
@@ -41,37 +43,38 @@ def draw_star(draw, center, radius, count, line_width, circle_width):
         y1 = cy - dy
         x2 = cx + dx
         y2 = cy + dy
-        draw.line((x1, y1, x2, y2), fill=line_color, width=line_width)
+        draw.line((x1, y1, x2, y2), line_pen)
 
     # Draw outer circle
     radius += 10 * SCALE_FACTOR
     bbox = [cx - radius, cy - radius, cx + radius, cy + radius]
-    draw.ellipse(bbox, outline=line_color, width=circle_width)
+    draw.ellipse(bbox, circle_pen)
 
 
 def draw_cubes_and_circles(draw, x, y, line_width):
     x, y = x * SCALE_FACTOR, y * SCALE_FACTOR
-    line_width = line_width * SCALE_FACTOR
+
+    pen = aggdraw.Pen(line_color, line_width * SCALE_FACTOR)
+    brush = aggdraw.Brush(line_color)
 
     d = 25 * SCALE_FACTOR
     for i in range(0, 20, 2):
         w = i * SCALE_FACTOR
-        if line_width == 1 * SCALE_FACTOR:
-            draw.rectangle([x, y, x + w, y + w], outline=line_color, width=SCALE_FACTOR)
-            draw.circle(
-                (x + w / 2, y + d + w / 2),
-                w / 2,
-                outline=line_color,
-                width=SCALE_FACTOR,
+        if line_width == 1:
+            draw.rectangle([x, y, x + w, y + w], pen)
+            draw.ellipse(
+                (x, y+d, x + w, y + d + w),
+                pen
             )
         else:
-            draw.rectangle([x, y, x + w, y + w], fill=line_color)
-            draw.circle((x + w / 2, y + d + w / 2), w / 2, fill=line_color)
+            draw.rectangle([x, y, x + w, y + w], pen, brush)
+            draw.ellipse((x, y+d, x + w, y + d + w), pen, brush)
         x += d
 
 
 def draw_fan(draw, x, y, line_width=1):
-    line_width = line_width * SCALE_FACTOR
+
+    pen = aggdraw.Pen(line_color, line_width * SCALE_FACTOR)
 
     for i, dy in enumerate((2, 5, 10)):
         x1 = x
@@ -85,14 +88,14 @@ def draw_fan(draw, x, y, line_width=1):
             y1 * SCALE_FACTOR,
             y2 * SCALE_FACTOR,
         )
-        draw.line((x1, y1, x2, y2), fill=line_color, width=line_width)
+        draw.line((x1, y1, x2, y2), pen)
 
 
 def draw_grid(draw, x, y, deg=0, cell_size=10, line_width=1):
-    line_width = line_width * SCALE_FACTOR
     angle = deg * math.pi / 180
-
     d = cell_size * 3
+
+    pen = aggdraw.Pen(line_color, line_width * SCALE_FACTOR)
 
     for ix in range(7):
         dx1 = -d + ix * cell_size
@@ -109,7 +112,7 @@ def draw_grid(draw, x, y, deg=0, cell_size=10, line_width=1):
             y1 * SCALE_FACTOR,
             y2 * SCALE_FACTOR,
         )
-        draw.line((x1, y1, x2, y2), fill=line_color, width=line_width)
+        draw.line((x1, y1, x2, y2), pen)
 
     for iy in range(7):
         dx1 = -d
@@ -126,11 +129,12 @@ def draw_grid(draw, x, y, deg=0, cell_size=10, line_width=1):
             y1 * SCALE_FACTOR,
             y2 * SCALE_FACTOR,
         )
-        draw.line((x1, y1, x2, y2), fill=line_color, width=line_width)
+        draw.line((x1, y1, x2, y2), pen)
+
 
 
 # Left: 1px lines and circle
-draw_star(draw, center=(150, 150), radius=120, count=32, line_width=1, circle_width=1)
+draw_star(draw, center=(150.3, 150.3), radius=120, count=32, line_width=1, circle_width=1)
 draw_cubes_and_circles(draw, 20, 310, line_width=1)
 
 # Right: 4px lines and circle
@@ -147,12 +151,14 @@ for i, deg in enumerate((0, 1, 5, 10, 20, 45)):
     draw_grid(draw, 50 + i * 100, 580, deg=deg, cell_size=2)
 
 
+
 if SCALE_FACTOR == 1:
     fname = "lines.png"
 else:
     fname = f"linesx{SCALE_FACTOR}.png"
 
 # Save
+draw.flush()
 filename = os.path.abspath(os.path.join(__file__, "..", "..", "images_src", fname))
 img.save(filename)
 print(f"Image saved as '{fname}'")

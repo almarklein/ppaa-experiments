@@ -8,6 +8,7 @@ dependencies = [
     "jinja2",
     "numpy",
     "pillow",
+    "aggdraw",
     "matplotlib",
     "scipy",
     "ruff",

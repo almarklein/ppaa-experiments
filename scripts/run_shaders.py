@@ -351,8 +351,8 @@ for Renderer in [
 
     if images_ddaa2p:
         alt_output_fname = os.path.join(all_images_dir, f"{name}_ddaa2p.png")
-        images_alt[0].save(
-            images_ddaa2p, append_images=images_ddaa2p[1:], loop=0, duration=0.04
+        images_ddaa2p[0].save(
+            alt_output_fname, append_images=images_ddaa2p[1:], loop=0, duration=0.04
         )
 
 
