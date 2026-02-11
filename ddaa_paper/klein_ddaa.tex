@@ -562,7 +562,7 @@ The \texttt{ddaa} algorithms looks better on all these aspects.
 
 In Figure~\ref{fig:compare8_circles}, a few coloured circles are depicted. The figure shows that going around a circle, the \texttt{ddaa2} method has the most uniform amount of blur.
 It also looks closest to the \texttt{ssaax4} (which can be considered a reference). In contrast \texttt{fxaa3c} is more similar to the \texttt{blur} method and \texttt{fxaa3d} diminishes thin lines.
-When other circles in the image are examined (not shown in Figure~\ref{fig:compare8_circles}) it can be seen that some circles are not diffused by any of the PPAA methods. This is because
+It can be seen that the green circle not smoothed by any of the PPAA methods. This is because
 these methods convert RGB colors to a scalar luma value, and the luma of certain colors is so close to the luma of the background, that the contrast falls below the algorithms threshold. This
 is an intrisic limitation of most PPAA methods, which is not easy to overcome due to limited availability of registers in a shader program.
 
