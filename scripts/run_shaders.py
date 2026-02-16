@@ -191,16 +191,16 @@ benchmarks = {}
 # Default no subset
 exp_renderers = None
 
-# exp_renderers = [
-#     # Renderer_null,
-#     Renderer_blur,
-#     Renderer_ssaax2,
-#     Renderer_ssaax4,
-#     Renderer_fxaa3c,
-#     Renderer_fxaa3d,
-#     Renderer_ddaa1,
-#     Renderer_ddaa2,
-# ]
+exp_renderers = [
+    # Renderer_null,
+    Renderer_blur,
+    Renderer_ssaax2,
+    Renderer_ssaax4,
+    Renderer_fxaa3c,
+    Renderer_fxaa3d,
+    Renderer_ddaa1,
+    Renderer_ddaa2,
+]
 
 
 image_names = [
@@ -208,8 +208,10 @@ image_names = [
     "circles.png",
     "plot.png",
     "sponza.png",
-    "synthetic.png",
 ]
+
+if not exp_renderers:
+    image_names.apend("synthetic")
 
 
 # ---------------------------- Select adapter
@@ -402,15 +404,15 @@ print("Done!")
 if exp_renderers:
     alt_benchmarks = benchmarks
 
-    ref = "blur"
-    if ref in benchmarks:
+    baseline = "blur"
+    if baseline in benchmarks:
         alt_benchmarks = {}
-        null_alg = benchmarks[ref]
+        baseline_benchmark = benchmarks[baseline]
         for alg in benchmarks:
             alt_benchmarks[alg] = {}
             for name in benchmarks[alg]:
                 alt_benchmarks[alg][name] = int(
-                    100 * benchmarks[alg][name] / null_alg[name]
+                    100 * benchmarks[alg][name] / baseline_benchmark[name]
                 )
     # print(json.dumps(benchmarks, indent=4))
     print(json.dumps(alt_benchmarks, indent=4))
