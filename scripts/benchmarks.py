@@ -13,14 +13,15 @@ benchmarks = {
         "ddaa1": {"lines": 92, "circles": 92, "synthetic": 109, "egypt": 102},
         "ddaa2": {"lines": 148, "circles": 144, "synthetic": 223, "egypt": 188},
     },
-    "Intel UHD 730": {
-        "blur": {"lines": 100, "circles": 100, "synthetic": 100, "egypt": 100},
-        "ssaax2": {"lines": 144, "circles": 144},
-        "ssaax4": {"lines": 7991, "circles": 7058},
-        "fxaa3c": {"lines": 59, "circles": 74, "synthetic": 104, "egypt": 101},
-        "fxaa3d": {"lines": 290, "circles": 287, "synthetic": 472, "egypt": 362},
-        "ddaa1": {"lines": 118, "circles": 114, "synthetic": 141, "egypt": 130},
-        "ddaa2": {"lines": 211, "circles": 203, "synthetic": 318, "egypt": 258},
+    "Intel UHD 730":{
+        "blur": {"lines": 100, "circles": 100, "plot": 100, "sponza": 100},
+        "ssaax2": {"lines": 107, "circles": 144, "plot": 155, "sponza": 201},
+        "ssaax4": {"lines": 7283, "circles": 7059, "plot": 7321, "sponza": 7153},
+        "fxaa3c": {"lines": 74, "circles": 103, "plot": 89, "sponza": 138},
+        "fxaa3d": {"lines": 222, "circles": 308, "plot": 213, "sponza": 529},
+        "ddaa1": {"lines": 95, "circles": 117, "plot": 94, "sponza": 164},
+        "ddaa2": {"lines": 153, "circles": 215, "plot": 154, "sponza": 367}
+        }
     },
     "AMD Radeon 780M": {
         "blur": {"lines": 100, "circles": 100, "synthetic": 100, "egypt": 100},
@@ -51,13 +52,13 @@ benchmarks = {
     },
     "Nvidia RTX 3050": {
         # Does not produce very stable results, need to run per-alg to get sensible results
-        "blur": {"lines": 100, "circles": 100, "synthetic": 100, "egypt": 100},
-        "ssaax2": {"lines": 161, "circles": 160},
-        "ssaax4": {"lines": 4497, "circles": 4174},
-        "fxaa3c": {"lines": 102, "circles": 101, "synthetic": 94, "egypt": 95},
-        "fxaa3d": {"lines": 150, "circles": 146, "synthetic": 185, "egypt": 160},
-        "ddaa1": {"lines": 124, "circles": 122, "synthetic": 128, "egypt": 127},
-        "ddaa2": {"lines": 152, "circles": 155, "synthetic": 224, "egypt": 189},
+        "blur": {"lines": 100, "circles": 100, "plot": 100, "sponza": 100},
+        "ssaax2": {"lines": 150, "circles": 154, "plot": 150, "sponza": 150},
+        "ssaax4": {"lines": 4489, "circles": 3249, "plot": 3328, "sponza": 3206},
+        "fxaa3c": {"lines": 93, "circles": 92, "plot": 88, "sponza": 110},
+        "fxaa3d": {"lines": 162, "circles": 185, "plot": 139, "sponza": 213},
+        "ddaa1": {"lines": 122, "circles": 120, "plot": 119, "sponza": 130},
+        "ddaa2": {"lines": 179, "circles": 172, "plot": 147, "sponza": 243},
     },
     "Nvidia RTX 5060 Ti": {
         "blur": {"lines": 100, "circles": 100, "synthetic": 100, "egypt": 100},
