@@ -645,13 +645,13 @@ only copies the image.) The final result was calculated by taking the mean of th
 \begin{tabular}{r|r|r|r|r|r|r}
 \textbf{Device} & \textbf{blur} & \textbf{ssaax2} & \textbf{fxaa3c} & \textbf{ddaa1} & \textbf{fxaa3d} & \textbf{ddaa2} \\
 \hline
-Intel UHD 630 & 100 & 74 & 94 & 98 & 230 & 175 \\
-Intel UHD 730 & 100 & 72 & 84 & 125 & 352 & 247 \\
-AMD Radeon 780M & 100 & 87 & 81 & 94 & 186 & 184 \\
-MacBook M1 Pro & 100 & 94 & 95 & 104 & 219 & 197 \\
-Nvidia RTX 2070 & 100 & 71 & 105 & 139 & 282 & 255 \\
-Nvidia RTX 3050 & 100 & 80 & 98 & 125 & 160 & 180 \\
-Nvidia RTX 5060 Ti & 100 & 82 & 102 & 150 & 202 & 203 \\
+Intel UHD 630 & 100 & 158 & 94 & 98 & 230 & 175 \\
+Intel UHD 730 & 100 & 151 & 101 & 117 & 318 & 222 \\
+AMD Radeon 780M & 100 & 167 & 93 & 101 & 188 & 198 \\
+MacBook M1 Pro & 100 & 195 & 95 & 101 & 240 & 184 \\
+Nvidia RTX 2070 & 100 & 141 & 103 & 137 & 275 & 247 \\
+Nvidia RTX 3050 & 100 & 151 & 95 & 122 & 174 & 185 \\
+Nvidia RTX 5060 Ti & 100 & 141 & 94 & 112 & 163 & 176 \\
 \end{tabular}
 \end{center}
 \caption{The performance of the considered PPAA algorithms.
@@ -664,27 +664,25 @@ The final results are shown in Table~\ref{tbl:perf}. The values for \texttt{blur
 
 The \texttt{ssaax2} shader is not a PPAA algorithm, but included for comparison.
 This shader is a cubic Mitchel filter, optimized to take just 12 texture samples.
-It performs consistently faster than the blur filter, which is surprising because the latter takes only 9 texture samples. This
-illustrates that SSAA with a factor 2 is a feasible method. Note that the costs
-for rendering the frame at a higher resolution are not included in the
-benchmarks, but these costs would be the same as when a HiDPI screen would have been used.
+Note that this only measure the resolve step; the costs
+for rendering the frame at a higher resolution are not taken into account.
+However, these costs would be the same as when a HiDPI screen would have been used.
 
 The \texttt{ssaax4} shader is not included in the benchmarks because it is not
 as highly optimized in the implementation, and requires 64 texture
 samples.
 
 As expected, the simpler algorithms \texttt{fxaa3c} and \texttt{ddaa1} are
-faster than the algorithms that apply an edge-search. They can be faster than
+faster than the algorithms that apply an edge-search. They can even be faster than
 the blur filter because of the early exit strategy for low-contrast regions. The
 \texttt{ddaa1} algorithm is consistently slightly slower than \texttt{fxaa3c}.
 
-In Intel integrated graphics and Apple Silicon, DDAA performs consistently
+On Intel integrated graphics and Apple Silicon, DDAA performs consistently
 better than FXAA. This suggests that the optimization of batching samples is
 helping the hardware run the algorithm faster. For AMD integrated graphics, DDAA
-and FXAA have similar performance.
-
-For the dedicated graphics cards (all Nvidia), DDAA performs
-either better or similar to FXAA, depending on the model.
+and FXAA have similar performance. For the dedicated graphics cards (all
+Nvidia), DDAA performs comparable to FXAA, being slightly slower of faster,
+depending on the model.
 
 
 %=========================================================================
