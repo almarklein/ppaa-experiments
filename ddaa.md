@@ -21,7 +21,7 @@ It improves on the popular FXAA by:
 
 * The (templated) source code: [ddaa2.wgsl](https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2.wgsl)
 * The source with default config: [ddaa2_default.wgsl](https://github.com/almarklein/ppaa-experiments/blob/main/wgsl/ddaa2_default.wgsl)
-* Comparison against other AA methods: https://almarklein.github.io/ppaa-experiments/viewer.html#image=lines.png&algs=ori,ssaax4,dlaa,fxaa3d,axaa,ddaa2
+* Comparison against other AA methods: https://almarklein.github.io/ppaa-experiments/viewer.html#image=lines.png&algs=ori,ssaax4,dlaa,fxaa3d,ddaa2
 
 
 ## History

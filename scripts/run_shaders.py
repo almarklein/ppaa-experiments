@@ -2,6 +2,7 @@
 Script to generate the images using the shaders.
 Run this after changing a shader.
 Then use the viewer to inspect the result.
+Also performs benchmark  (set ``exp_renderers``).
 """
 
 import os
@@ -16,7 +17,6 @@ from renderer_wgsl import WgslFullscreenRenderer
 
 
 src_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_src"))
-pre_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_pre"))
 all_images_dir = os.path.abspath(os.path.join(__file__, "..", "..", "images_all"))
 
 os.makedirs(all_images_dir, exist_ok=True)
@@ -55,6 +55,11 @@ class Renderer_ssaax2(SSAAFullScreenRenderer):
 class Renderer_ssaax4(SSAAFullScreenRenderer):
     # Note: 4 is the largest scale factor for which kernels are not truncated.
     TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 4}
+
+
+class Renderer_ssaax8(SSAAFullScreenRenderer):
+    # Note: not a great kernel, but *a lot* of pixels.
+    TEMPLATE_VARS = {**SSAAFullScreenRenderer.TEMPLATE_VARS, "scaleFactor": 8}
 
 
 # Upsampling
@@ -153,7 +158,14 @@ class Renderer_ddaa2(WgslFullscreenRenderer):
 
 # ---------------------------- Copy source images
 
-for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
+for fname in [
+    "lines.png",
+    "circles.png",
+    "plot.png",
+    "sponza.png",
+    "synthetic.png",
+    "animated.png",
+]:
     name = fname.rpartition(".")[0]
 
     input_fname = os.path.join(src_images_dir, fname)
@@ -161,23 +173,12 @@ for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
     shutil.copy(input_fname, output_fname)
 
     # Hirez versions
-    if fname in ["lines.png", "circles.png"]:
-        for times in [2, 4]:
+    if fname not in ["synthetic.png"]:
+        for times in [2, 4, 8]:
             fname = f"{name}x{times}.png"
             input_fname = os.path.join(src_images_dir, fname)
             output_fname = os.path.join(all_images_dir, fname)
             shutil.copy(input_fname, output_fname)
-
-
-# ---------------------------- Copy pre-obtained images
-
-for fname in ["lines.png", "circles.png", "synthetic.png", "egypt.png"]:
-    name = fname.rpartition(".")[0]
-    fname = f"{name}_axaa.png"
-    input_fname = os.path.join(pre_images_dir, fname)
-    output_fname = os.path.join(all_images_dir, fname)
-
-    shutil.copy(input_fname, output_fname)
 
 
 # ----------------------------  Select experiment
@@ -192,22 +193,25 @@ exp_renderers = None
 
 exp_renderers = [
     # Renderer_null,
-    # Renderer_blur,
-    # Renderer_ssaax2,
-    # Renderer_ssaax4,
-    # Renderer_fxaa3c,
-    # Renderer_fxaa3d,
-    # Renderer_ddaa1,
-    # Renderer_ddaa2,
+    Renderer_blur,
+    Renderer_ssaax2,
+    Renderer_ssaax4,
+    Renderer_fxaa3c,
+    Renderer_fxaa3d,
+    Renderer_ddaa1,
+    Renderer_ddaa2,
 ]
 
 
 image_names = [
     "lines.png",
     "circles.png",
-    "synthetic.png",
-    "egypt.png",
+    "plot.png",
+    "sponza.png",
 ]
+
+if not exp_renderers:
+    image_names.apend("synthetic")
 
 
 # ---------------------------- Select adapter
@@ -233,6 +237,7 @@ for Renderer in [
     # SSAA
     Renderer_ssaax2,
     Renderer_ssaax4,
+    Renderer_ssaax8,
     # PPAA
     Renderer_dlaa,
     Renderer_fxaa2,
@@ -279,6 +284,78 @@ for Renderer in [
             print("done")
 
         Image.fromarray(im2).convert("RGB").save(output_fname)
+
+        # Also do ssaax2+ddaa2 (ddaa2p)
+        if Renderer is Renderer_ssaax2:
+            im2 = Renderer_ddaa2(adapter).render(im1)
+            im3 = renderer.render(im2)
+            alt_output_fname = os.path.join(all_images_dir, f"{name}_ddaa2p.png")
+            Image.fromarray(im3).convert("RGB").save(alt_output_fname)
+
+
+# ----------------------------  Animated
+
+for Renderer in [
+    Renderer_null,
+    Renderer_blur,
+    # SSAA
+    Renderer_ssaax2,
+    Renderer_ssaax4,
+    Renderer_ssaax8,
+    # PPAA
+    Renderer_dlaa,
+    Renderer_fxaa2,
+    Renderer_fxaa3c,
+    Renderer_fxaa3d,
+    Renderer_ddaa1,
+    Renderer_ddaa2,
+]:
+    if exp_renderers:
+        continue  # skip when doing experiments
+    print(f"Animating with {Renderer.__name__}")
+    renderer = Renderer(adapter)
+    hirez_flag = ""
+    scale_factor = Renderer.TEMPLATE_VARS["scaleFactor"]
+    if issubclass(Renderer, WgslFullscreenRenderer) and scale_factor > 1:
+        hirez_flag = "x" + str(scale_factor).rstrip(".0")
+    shadername = renderer.SHADER.split(".")[0] + hirez_flag
+
+    name = "animated"
+    input_fname = os.path.join(all_images_dir, f"{name}{hirez_flag}.png")
+    output_fname = os.path.join(all_images_dir, f"{name}_{shadername}.png")
+    print(f"    Generating {name} ({os.path.basename(output_fname)})")
+    print("    {img.n_frames} frames: ")
+    img = Image.open(input_fname)
+    assert img.is_animated
+
+    images = []
+    images_ddaa2p = []
+    for frame_index in range(img.n_frames):
+        print(f"{frame_index}", end=" ")
+        img.seek(frame_index)
+        im1 = np.asarray(img.convert("RGBA")).copy()
+        assert im1.dtype == np.uint8
+        im1[:, :, 3] = 255  # set opaque, just in case
+
+        im2 = renderer.render(im1)
+        images.append(Image.fromarray(im2).convert("RGB"))
+
+        if Renderer is Renderer_ssaax2:
+            im2 = Renderer_ddaa2(adapter).render(im1)
+            im3 = renderer.render(im2)
+            images_ddaa2p.append(Image.fromarray(im3).convert("RGB"))
+
+    print("done")
+
+    # Write
+    main_image = images[0]
+    main_image.save(output_fname, append_images=images[1:], loop=0, duration=0.04)
+
+    if images_ddaa2p:
+        alt_output_fname = os.path.join(all_images_dir, f"{name}_ddaa2p.png")
+        images_ddaa2p[0].save(
+            alt_output_fname, append_images=images_ddaa2p[1:], loop=0, duration=0.04
+        )
 
 
 # ---------------------------- Upsampling
@@ -327,17 +404,15 @@ print("Done!")
 if exp_renderers:
     alt_benchmarks = benchmarks
 
-    ref = "blur"
-    if ref in benchmarks:
+    baseline = "blur"
+    if baseline in benchmarks:
         alt_benchmarks = {}
-        null_alg = benchmarks[ref]
+        baseline_benchmark = benchmarks[baseline]
         for alg in benchmarks:
-            if alg == ref:
-                continue
             alt_benchmarks[alg] = {}
             for name in benchmarks[alg]:
                 alt_benchmarks[alg][name] = int(
-                    100 * benchmarks[alg][name] / null_alg[name]
+                    100 * benchmarks[alg][name] / baseline_benchmark[name]
                 )
     # print(json.dumps(benchmarks, indent=4))
     print(json.dumps(alt_benchmarks, indent=4))
