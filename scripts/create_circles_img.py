@@ -7,7 +7,7 @@ different contrasts.
 import os
 import webbrowser  # noqa
 
-from PIL import Image, ImageDraw
+from PIL import Image  # , ImageDraw
 import aggdraw
 
 
@@ -34,9 +34,9 @@ def draw_circle(center, line_color):
     r2, width2 = 20 * SCALE_FACTOR, 1 * SCALE_FACTOR
     r3 = 10 * SCALE_FACTOR
 
-    coords1 = center[0] - r1, center[1] - r1, center[0]+r1, center[1]+r1
-    coords2 = center[0] - r2, center[1] - r2, center[0]+r2, center[1]+r2
-    coords3 = center[0] - r3, center[1] - r3, center[0]+r3, center[1]+r3
+    coords1 = center[0] - r1, center[1] - r1, center[0] + r1, center[1] + r1
+    coords2 = center[0] - r2, center[1] - r2, center[0] + r2, center[1] + r2
+    coords3 = center[0] - r3, center[1] - r3, center[0] + r3, center[1] + r3
 
     draw.ellipse(coords1, aggdraw.Pen(line_color, width1))
     draw.ellipse(coords2, aggdraw.Pen(line_color, width2))

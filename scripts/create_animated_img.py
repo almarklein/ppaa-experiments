@@ -6,7 +6,7 @@ import os
 import math
 import webbrowser  # noqa
 
-from PIL import Image, ImageDraw
+from PIL import Image  # , ImageDraw
 import aggdraw
 
 

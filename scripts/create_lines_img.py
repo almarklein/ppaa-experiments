@@ -10,7 +10,7 @@ import os
 import math
 import webbrowser  # noqa
 
-from PIL import Image, ImageDraw
+from PIL import Image  # , ImageDraw
 import aggdraw
 
 
@@ -62,18 +62,14 @@ def draw_cubes_and_circles(draw, x, y, line_width):
         w = i * SCALE_FACTOR
         if line_width == 1:
             draw.rectangle([x, y, x + w, y + w], pen)
-            draw.ellipse(
-                (x, y+d, x + w, y + d + w),
-                pen
-            )
+            draw.ellipse((x, y + d, x + w, y + d + w), pen)
         else:
             draw.rectangle([x, y, x + w, y + w], pen, brush)
-            draw.ellipse((x, y+d, x + w, y + d + w), pen, brush)
+            draw.ellipse((x, y + d, x + w, y + d + w), pen, brush)
         x += d
 
 
 def draw_fan(draw, x, y, line_width=1):
-
     pen = aggdraw.Pen(line_color, line_width * SCALE_FACTOR)
 
     for i, dy in enumerate((2, 5, 10)):
@@ -132,9 +128,10 @@ def draw_grid(draw, x, y, deg=0, cell_size=10, line_width=1):
         draw.line((x1, y1, x2, y2), pen)
 
 
-
 # Left: 1px lines and circle
-draw_star(draw, center=(150.3, 150.3), radius=120, count=32, line_width=1, circle_width=1)
+draw_star(
+    draw, center=(150.3, 150.3), radius=120, count=32, line_width=1, circle_width=1
+)
 draw_cubes_and_circles(draw, 20, 310, line_width=1)
 
 # Right: 4px lines and circle
@@ -149,7 +146,6 @@ for i, deg in enumerate((0, 1, 5, 10, 20, 45)):
     draw_grid(draw, 50 + i * 100, 470, deg=deg, cell_size=10)
     draw_grid(draw, 50 + i * 100, 540, deg=deg, cell_size=5)
     draw_grid(draw, 50 + i * 100, 580, deg=deg, cell_size=2)
-
 
 
 if SCALE_FACTOR == 1:

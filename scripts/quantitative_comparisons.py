@@ -168,8 +168,9 @@ print("\n".join(table))
 
 ##
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.ticker import MultipleLocator  # noqa: E402
+
 plt.ion()
 
 
@@ -182,20 +183,20 @@ for image_name, d in data.items():
     for method_name, v in d.items():
         bench_dict[method_name][image_name] = float(v[0])
 
-colors = ["#888", "#AAA", "#444", "#F88",  "#D66", "#88E", "#66C"]
+colors = ["#888", "#AAA", "#444", "#F88", "#D66", "#88E", "#66C"]
 
 fig = plt.figure(1)
 fig.clear()
 ax = plt.subplot(111)
 for j, alg_name in enumerate(method_names):
     y = list(bench_dict[alg_name].values())
-    x = [j -0.3 + 0.2 * k for k in range(len(y))]
+    x = [j - 0.3 + 0.2 * k for k in range(len(y))]
     plt.bar(x, y, width=0.15, color=colors[j])
 ax.set_xticks([j for j in range(len(method_names))], method_names)
-ax.tick_params(axis='x', which='both', length=0)
+ax.tick_params(axis="x", which="both", length=0)
 ax.yaxis.set_major_locator(MultipleLocator(1))
 ax.set_ylim(15, 31)
-ax.grid(axis='y', which='major')
+ax.grid(axis="y", which="major")
 ax.set_axisbelow(True)
 ax.set_ylabel("PSNR (db)")
 
