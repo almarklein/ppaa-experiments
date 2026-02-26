@@ -95,3 +95,33 @@ for device, methods in benchmarks.items():
 print("\n".join(table))
 # print()
 # print("\n".join(latex_table))
+
+
+##
+
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
+plt.ion()
+
+
+colors = ["#BBB", "#888", "#F88", "#88E", "#D66", "#66C"]
+
+fig = plt.figure(1)
+fig.clear()
+for i, device_name in enumerate(benchmarks):
+    bench_dict = benchmarks[device_name]
+    ax = plt.subplot(4, 2, i + 1)
+    for j, alg_name in enumerate(method_names):
+        y = list(bench_dict[alg_name].values())
+        x = [j -0.3 + 0.2 * k for k in range(len(y))]
+        plt.bar(x, y, width=0.15, color=colors[j])
+    ax.set_xticks([j for j in range(len(method_names))], method_names)
+    ax.tick_params(axis='x', which='both', length=0)
+    ax.yaxis.set_major_locator(MultipleLocator(100))
+    ax.grid(axis='y', which='major')
+    ax.set_axisbelow(True)
+    ax.set_title(device_name)
+
+plt.tight_layout()
+# fig.savefig("/Users/almar/dev/ddaa_paper/ddaa_paper/images/performance_benchmark_results.png", dpi=300)
+plt.show()
